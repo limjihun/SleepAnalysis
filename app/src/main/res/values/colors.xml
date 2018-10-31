@@ -5,5 +5,5 @@
     <color name="colorAccent">#D81B60</color>
     <color name="measureBackground">#28323F</color>
     <color name="resultBackground">#38424F</color>
-    <color name="white">#DDDDFF</color>
+    <color name="white">#ddddff</color>
 </resources>
