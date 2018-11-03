@@ -40,6 +40,8 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
 
                 sleep_time = end_time - start_time;
                 intent.putExtra("sleep_time", sleep_time);
+                intent.putExtra("start_time", start_time);
+                intent.putExtra("end_time", end_time);
                 Log.d("Sleep time : ", String.valueOf(sleep_time));
                 startActivity(intent);
             }
