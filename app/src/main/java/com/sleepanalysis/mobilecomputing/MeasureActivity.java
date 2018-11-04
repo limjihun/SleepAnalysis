@@ -14,6 +14,10 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.data.Entry;
+
+import java.util.ArrayList;
+
 public class MeasureActivity extends AppCompatActivity implements SensorEventListener {
 
     final static int START = 0;
@@ -25,6 +29,8 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     SensorManager mSensorManager;
     Sensor mLightSensor;
     TextView light_info;
+    ArrayList<Entry> values_light;
+    long time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +48,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                 intent.putExtra("sleep_time", sleep_time);
                 intent.putExtra("start_time", start_time);
                 intent.putExtra("end_time", end_time);
+                intent.putExtra("values_light", values_light);
                 Log.d("Sleep time : ", String.valueOf(sleep_time));
                 startActivity(intent);
             }
@@ -50,6 +57,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
         mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
         mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         light_info = findViewById(R.id.light_test);
+        values_light = new ArrayList<Entry>();
 
         // start 클릭 시 시간 측정 시작, end로 문구 변경
         final Button button_start = findViewById(R.id.start_button);
@@ -89,6 +97,9 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     public void onSensorChanged(SensorEvent event){
         if(event.sensor.getType() == Sensor.TYPE_LIGHT){
             light_info.setText(String.valueOf(event.values[0]));
+            time = System.currentTimeMillis() / 1000;
+            String temp = String.valueOf((time / 3600 + 9) % 24) + String.valueOf(time / 60 % 60) + String.valueOf(time % 60);
+            values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
         }
     }
 }

@@ -2,6 +2,7 @@ package com.sleepanalysis.mobilecomputing;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.icu.text.DecimalFormat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -9,16 +10,19 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 
 import java.util.ArrayList;
 
 public class ResultActivity extends AppCompatActivity {
+    String second, minute, hour;
+    String time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,41 +57,60 @@ public class ResultActivity extends AppCompatActivity {
         chart_light.setDescription(null);
         chart_light.setBackgroundColor(Color.parseColor("#EFEFFB"));
         chart_light.getAxisRight().setEnabled(false);
+        chart_light.setScaleYEnabled(false);
+        chart_light.setDoubleTapToZoomEnabled(false);
 
         // XAxis
         XAxis x_axis_light = chart_light.getXAxis();
         x_axis_light.setPosition(XAxis.XAxisPosition.BOTTOM);
         x_axis_light.setDrawGridLines(true);
-        int start_time, end_time = 0;
-        start_time = (int)((intent.getExtras().getLong("start_time") / 3600000 + 9) % 24);
-        end_time = (int)((intent.getExtras().getLong("end_time") / 360000 + 9) % 24);
-        x_axis_light.setAxisMinimum(start_time);
-        x_axis_light.setAxisMaximum(end_time);
+        x_axis_light.setTextSize(1);
+        x_axis_light.setValueFormatter(new IAxisValueFormatter() {
+
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+
+                time = String.valueOf(value);
+                hour = time.substring(0, 2);
+                minute = time.substring(2, 4);
+                second = time.substring(4);
+                return hour + "시" + minute + "분" + second + "초";
+            }
+
+//            @Override
+//            public int getDecimalDigits() {
+//                return 1;
+//            }
+        });
+
+//        long start_time, end_time;
+//        start_time = (intent.getExtras().getLong("start_time") / 1000);
+//        end_time = (intent.getExtras().getLong("end_time") / 1000);
+//        x_axis_light.setAxisMinimum(start_time);
+//        x_axis_light.setAxisMaximum(end_time);
 
         // YAxis
         YAxis left_axis_light = chart_light.getAxisLeft();
         left_axis_light.setDrawGridLines(true);
         left_axis_light.setDrawAxisLine(true);
         left_axis_light.setAxisMinimum(0);
-        left_axis_light.setAxisMaximum(300);
-//        left_axis_light = chart_light.getAxis(YAxis.AxisDependency.LEFT);
+//        left_axis_light.setAxisMaximum(70);
 
-        // Making Data
-        ArrayList<Entry> values_light = new ArrayList<Entry>();
-//        values_light.add(new Entry(1, 0));
-//        values_light.add(new Entry(2, 4));
-//        values_light.add(new Entry(3, 2));
-//        values_light.add(new Entry(4, 7));
+        // Load Data in intent extra
+        ArrayList<Entry> values_light = intent.getExtras().getParcelableArrayList("values_light");
 
         // DataSet (= Line)
         LineDataSet dataset_light = new LineDataSet(values_light, "Brightness");
         dataset_light.setColor(Color.BLUE);
+        dataset_light.setDrawCircles(true);
+        dataset_light.setCircleSize(2);
         dataset_light.setLineWidth(2);
         dataset_light.setDrawValues(false);
 
         // Set the chart
         LineData data_light = new LineData(dataset_light);
         chart_light.setData(data_light);
+        chart_light.animateXY(2000, 2000);
         chart_light.invalidate();
     }
 }
