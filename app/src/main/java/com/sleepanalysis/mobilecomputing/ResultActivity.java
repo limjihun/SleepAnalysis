@@ -2,7 +2,6 @@ package com.sleepanalysis.mobilecomputing;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.icu.text.DecimalFormat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -69,12 +68,11 @@ public class ResultActivity extends AppCompatActivity {
 
             @Override
             public String getFormattedValue(float value, AxisBase axis) {
-
-                time = String.valueOf(value);
+                time = String.valueOf((int)value);
                 hour = time.substring(0, 2);
                 minute = time.substring(2, 4);
                 second = time.substring(4);
-                return hour + "시" + minute + "분" + second + "초";
+                return hour + "시 " + minute + "분 " + second + "초";
             }
 
 //            @Override
@@ -103,7 +101,7 @@ public class ResultActivity extends AppCompatActivity {
         LineDataSet dataset_light = new LineDataSet(values_light, "Brightness");
         dataset_light.setColor(Color.BLUE);
         dataset_light.setDrawCircles(true);
-        dataset_light.setCircleSize(2);
+        dataset_light.setCircleSize(1);
         dataset_light.setLineWidth(2);
         dataset_light.setDrawValues(false);
 
