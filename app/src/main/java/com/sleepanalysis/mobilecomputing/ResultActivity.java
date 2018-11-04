@@ -65,7 +65,6 @@ public class ResultActivity extends AppCompatActivity {
         x_axis_light.setDrawGridLines(true);
         x_axis_light.setTextSize(1);
         x_axis_light.setValueFormatter(new IAxisValueFormatter() {
-
             @Override
             public String getFormattedValue(float value, AxisBase axis) {
                 time = String.valueOf((int)value);
@@ -81,12 +80,6 @@ public class ResultActivity extends AppCompatActivity {
 //            }
         });
 
-//        long start_time, end_time;
-//        start_time = (intent.getExtras().getLong("start_time") / 1000);
-//        end_time = (intent.getExtras().getLong("end_time") / 1000);
-//        x_axis_light.setAxisMinimum(start_time);
-//        x_axis_light.setAxisMaximum(end_time);
-
         // YAxis
         YAxis left_axis_light = chart_light.getAxisLeft();
         left_axis_light.setDrawGridLines(true);
@@ -100,8 +93,8 @@ public class ResultActivity extends AppCompatActivity {
         // DataSet (= Line)
         LineDataSet dataset_light = new LineDataSet(values_light, "Brightness");
         dataset_light.setColor(Color.BLUE);
-        dataset_light.setDrawCircles(true);
-        dataset_light.setCircleSize(1);
+        dataset_light.setDrawCircles(false);
+//        dataset_light.setCircleSize(1);
         dataset_light.setLineWidth(2);
         dataset_light.setDrawValues(false);
 

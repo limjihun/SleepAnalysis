@@ -30,7 +30,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     Sensor mLightSensor;
     TextView light_info;
     ArrayList<Entry> values_light;
-    long time;
+    long time, previous;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +58,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
         mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         light_info = findViewById(R.id.light_test);
         values_light = new ArrayList<Entry>();
+        previous = -1;
 
         // start 클릭 시 시간 측정 시작, end로 문구 변경
         final Button button_start = findViewById(R.id.start_button);
@@ -69,7 +70,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                         button_start.setText(getText(R.string.end));
                         start_time = System.currentTimeMillis();
 
-                        mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_UI);
+                        mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
                         status = END;
                         Log.d("Start time: ", String.valueOf(start_time));
@@ -98,7 +99,10 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
         if(event.sensor.getType() == Sensor.TYPE_LIGHT){
             light_info.setText(String.valueOf(event.values[0]));
             time = System.currentTimeMillis() / 1000;
+            if (time == previous) return;
+            previous = time;
             String temp = String.valueOf((time / 3600 + 9) % 24) + String.valueOf(time / 60 % 60) + String.valueOf(time % 60);
+            Log.d("current time", temp);
             values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
         }
     }
