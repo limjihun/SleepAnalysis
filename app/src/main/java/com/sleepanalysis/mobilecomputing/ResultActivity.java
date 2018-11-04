@@ -2,8 +2,10 @@ package com.sleepanalysis.mobilecomputing;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.icu.text.DecimalFormat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -65,9 +67,14 @@ public class ResultActivity extends AppCompatActivity {
         x_axis_light.setDrawGridLines(true);
         x_axis_light.setTextSize(1);
         x_axis_light.setValueFormatter(new IAxisValueFormatter() {
+            private DecimalFormat mFormat;
+
             @Override
             public String getFormattedValue(float value, AxisBase axis) {
-                time = String.valueOf((int)value);
+                mFormat = new DecimalFormat("######");
+
+                time = String.format("%06d", (int)value);
+                Log.d("parameter", time);
                 hour = time.substring(0, 2);
                 minute = time.substring(2, 4);
                 second = time.substring(4);

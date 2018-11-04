@@ -32,6 +32,8 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     ArrayList<Entry> values_light;
     long time, previous;
 
+    TextView description;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +62,8 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
         values_light = new ArrayList<Entry>();
         previous = -1;
 
+        description = findViewById(R.id.description);
+
         // start 클릭 시 시간 측정 시작, end로 문구 변경
         final Button button_start = findViewById(R.id.start_button);
         button_start.setOnClickListener(new View.OnClickListener() {
@@ -72,6 +76,8 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
 
                         mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
+                        description.setVisibility(View.INVISIBLE);
+
                         status = END;
                         Log.d("Start time: ", String.valueOf(start_time));
                         break;
@@ -80,6 +86,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                         button_start.setText(getText(R.string.start));
                         end_time = System.currentTimeMillis();
 
+                        description.setVisibility(View.VISIBLE);
                         mSensorManager.unregisterListener(MeasureActivity.this);
 
                         status = START;
@@ -101,7 +108,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
             time = System.currentTimeMillis() / 1000;
             if (time == previous) return;
             previous = time;
-            String temp = String.valueOf((time / 3600 + 9) % 24) + String.valueOf(time / 60 % 60) + String.valueOf(time % 60);
+            String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
             Log.d("current time", temp);
             values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
         }
