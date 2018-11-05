@@ -3,6 +3,7 @@ package com.sleepanalysis.mobilecomputing;
 import android.content.Intent;
 import android.graphics.Color;
 import android.icu.text.DecimalFormat;
+import android.icu.text.SimpleDateFormat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,8 +19,11 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.formatter.IValueFormatter;
+import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 public class ResultActivity extends AppCompatActivity {
     String second, minute, hour;
@@ -67,24 +71,26 @@ public class ResultActivity extends AppCompatActivity {
         x_axis_light.setDrawGridLines(true);
         x_axis_light.setTextSize(1);
         x_axis_light.setValueFormatter(new IAxisValueFormatter() {
-            private DecimalFormat mFormat;
-
             @Override
             public String getFormattedValue(float value, AxisBase axis) {
-                mFormat = new DecimalFormat("######");
+                SimpleDateFormat parse_format = new SimpleDateFormat("hhmmss");
+                SimpleDateFormat return_format = new SimpleDateFormat("hh:mm:ss");
 
-                time = String.format("%06d", (int)value);
-                Log.d("parameter", time);
-                hour = time.substring(0, 2);
-                minute = time.substring(2, 4);
-                second = time.substring(4);
-                return hour + "시 " + minute + "분 " + second + "초";
+                Date date = null;
+                try{
+                    date = parse_format.parse(String.valueOf((int)value));
+                }catch ( Exception e ){
+                    e.printStackTrace();
+                }
+
+                Log.d("parameter_raw", String.valueOf(value));
+
+//                Date date = new Date((int)value * 1000);
+
+                Log.d("parameter_date", String.valueOf(date));
+
+                return return_format.format(date);
             }
-
-//            @Override
-//            public int getDecimalDigits() {
-//                return 1;
-//            }
         });
 
         // YAxis
@@ -92,7 +98,6 @@ public class ResultActivity extends AppCompatActivity {
         left_axis_light.setDrawGridLines(true);
         left_axis_light.setDrawAxisLine(true);
         left_axis_light.setAxisMinimum(0);
-//        left_axis_light.setAxisMaximum(70);
 
         // Load Data in intent extra
         ArrayList<Entry> values_light = intent.getExtras().getParcelableArrayList("values_light");
@@ -101,9 +106,22 @@ public class ResultActivity extends AppCompatActivity {
         LineDataSet dataset_light = new LineDataSet(values_light, "Brightness");
         dataset_light.setColor(Color.BLUE);
         dataset_light.setDrawCircles(false);
-//        dataset_light.setCircleSize(1);
         dataset_light.setLineWidth(2);
         dataset_light.setDrawValues(false);
+        dataset_light.setValueFormatter(new IValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+                SimpleDateFormat parse_format = new SimpleDateFormat("hhmmss");
+                SimpleDateFormat return_format = new SimpleDateFormat("hh:mm:ss");
+                Date date = null;
+                try {
+                    date = parse_format.parse(String.valueOf((int) value));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return return_format.format(date);
+            }
+        });
 
         // Set the chart
         LineData data_light = new LineData(dataset_light);

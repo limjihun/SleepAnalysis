@@ -106,11 +106,15 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
         if(event.sensor.getType() == Sensor.TYPE_LIGHT){
             light_info.setText(String.valueOf(event.values[0]));
             time = System.currentTimeMillis() / 1000;
-            if (time == previous) return;
+            if (time - previous < 1) return;
             previous = time;
-            String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
-            Log.d("current time", temp);
-            values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
+//            String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
+            long temp = ((time / 3600 + 9) % 24) * 10000 + (time / 60 % 60) * 100 + (time % 60);
+            Log.d("parameter_before", String.valueOf(temp));
+//            Log.d("parameter_before", String.valueOf(time + 32400));
+//            values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
+//            values_light.add(new Entry(time + 32400, event.values[0]));
+            values_light.add(new Entry(temp, event.values[0]));
         }
     }
 }
