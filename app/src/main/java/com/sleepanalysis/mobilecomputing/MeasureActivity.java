@@ -1,6 +1,11 @@
 package com.sleepanalysis.mobilecomputing;
 
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,13 +14,25 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
-public class MeasureActivity extends AppCompatActivity {
+import com.github.mikephil.charting.data.Entry;
+
+import java.util.ArrayList;
+
+public class MeasureActivity extends AppCompatActivity implements SensorEventListener {
 
     final static int START = 0;
     final static int END = 1;
 
     int status = START;
     long start_time, end_time, sleep_time = 0L;
+
+    SensorManager mSensorManager;
+    Sensor mLightSensor;
+    TextView light_info;
+    ArrayList<Entry> values_light;
+    long time, previous;
+
+    TextView description;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,10 +48,21 @@ public class MeasureActivity extends AppCompatActivity {
 
                 sleep_time = end_time - start_time;
                 intent.putExtra("sleep_time", sleep_time);
+                intent.putExtra("start_time", start_time);
+                intent.putExtra("end_time", end_time);
+                intent.putExtra("values_light", values_light);
                 Log.d("Sleep time : ", String.valueOf(sleep_time));
                 startActivity(intent);
             }
         });
+
+        mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+        light_info = findViewById(R.id.light_test);
+        values_light = new ArrayList<Entry>();
+        previous = -1;
+
+        description = findViewById(R.id.description);
 
         // start 클릭 시 시간 측정 시작, end로 문구 변경
         final Button button_start = findViewById(R.id.start_button);
@@ -45,6 +73,11 @@ public class MeasureActivity extends AppCompatActivity {
                     case START :
                         button_start.setText(getText(R.string.end));
                         start_time = System.currentTimeMillis();
+
+                        mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
+                        description.setVisibility(View.INVISIBLE);
+
                         status = END;
                         Log.d("Start time: ", String.valueOf(start_time));
                         break;
@@ -52,6 +85,10 @@ public class MeasureActivity extends AppCompatActivity {
                     case END :
                         button_start.setText(getText(R.string.start));
                         end_time = System.currentTimeMillis();
+
+                        description.setVisibility(View.VISIBLE);
+                        mSensorManager.unregisterListener(MeasureActivity.this);
+
                         status = START;
                         Log.d("End time: ", String.valueOf(end_time));
                         break;
@@ -60,7 +97,24 @@ public class MeasureActivity extends AppCompatActivity {
 
             }
         });
+    }
 
+    public void onAccuracyChanged(Sensor sensor, int accuracy){
+    }
 
+    public void onSensorChanged(SensorEvent event){
+        if(event.sensor.getType() == Sensor.TYPE_LIGHT){
+            light_info.setText(String.valueOf(event.values[0]));
+            time = System.currentTimeMillis() / 1000;
+            if (time - previous < 1) return;
+            previous = time;
+//            String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
+            long temp = ((time / 3600 + 9) % 24) * 10000 + (time / 60 % 60) * 100 + (time % 60);
+            Log.d("parameter_before", String.valueOf(temp));
+//            Log.d("parameter_before", String.valueOf(time + 32400));
+//            values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
+//            values_light.add(new Entry(time + 32400, event.values[0]));
+            values_light.add(new Entry(temp, event.values[0]));
+        }
     }
 }
