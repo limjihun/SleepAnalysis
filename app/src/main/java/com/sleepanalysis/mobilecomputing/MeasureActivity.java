@@ -14,6 +14,10 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.data.Entry;
+
+import java.util.ArrayList;
+
 public class MeasureActivity extends AppCompatActivity implements SensorEventListener {
 
     final static int START = 0;
@@ -25,6 +29,10 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     SensorManager mSensorManager;
     Sensor mLightSensor;
     TextView light_info;
+    ArrayList<Entry> values_light;
+    long time, previous;
+
+    TextView description;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +48,9 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
 
                 sleep_time = end_time - start_time;
                 intent.putExtra("sleep_time", sleep_time);
+                intent.putExtra("start_time", start_time);
+                intent.putExtra("end_time", end_time);
+                intent.putExtra("values_light", values_light);
                 Log.d("Sleep time : ", String.valueOf(sleep_time));
                 startActivity(intent);
             }
@@ -48,6 +59,10 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
         mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
         mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         light_info = findViewById(R.id.light_test);
+        values_light = new ArrayList<Entry>();
+        previous = -1;
+
+        description = findViewById(R.id.description);
 
         // start 클릭 시 시간 측정 시작, end로 문구 변경
         final Button button_start = findViewById(R.id.start_button);
@@ -59,7 +74,9 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                         button_start.setText(getText(R.string.end));
                         start_time = System.currentTimeMillis();
 
-                        mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_UI);
+                        mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
+                        description.setVisibility(View.INVISIBLE);
 
                         status = END;
                         Log.d("Start time: ", String.valueOf(start_time));
@@ -69,6 +86,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                         button_start.setText(getText(R.string.start));
                         end_time = System.currentTimeMillis();
 
+                        description.setVisibility(View.VISIBLE);
                         mSensorManager.unregisterListener(MeasureActivity.this);
 
                         status = START;
@@ -87,6 +105,16 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     public void onSensorChanged(SensorEvent event){
         if(event.sensor.getType() == Sensor.TYPE_LIGHT){
             light_info.setText(String.valueOf(event.values[0]));
+            time = System.currentTimeMillis() / 1000;
+            if (time - previous < 1) return;
+            previous = time;
+//            String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
+            long temp = ((time / 3600 + 9) % 24) * 10000 + (time / 60 % 60) * 100 + (time % 60);
+            Log.d("parameter_before", String.valueOf(temp));
+//            Log.d("parameter_before", String.valueOf(time + 32400));
+//            values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
+//            values_light.add(new Entry(time + 32400, event.values[0]));
+            values_light.add(new Entry(temp, event.values[0]));
         }
     }
 }
