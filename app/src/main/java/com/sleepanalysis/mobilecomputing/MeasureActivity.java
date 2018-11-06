@@ -54,6 +54,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     long time, previous;
 
     TextView description;
+    boolean isMeasured;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,11 +70,17 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                     10);}
 
         // button_result 클릭 시 ResultActivity로 전환
+        isMeasured = false;
         ImageButton button_result = findViewById(R.id.result_button);
         button_result.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MeasureActivity.this, ResultActivity.class);
+
+                if (!isMeasured) {
+                    Toast.makeText(getApplicationContext(), "Please measure first", Toast.LENGTH_LONG).show();
+                    return;
+                }
 
                 sleep_time = end_time - start_time;
                 intent.putExtra("sleep_time", sleep_time);
@@ -125,8 +132,7 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                             Log.d("Record_Failed", "Start_Record_Failed");
                         }
 
-                        Toast.makeText(getApplicationContext(), "Starting Measurement",
-                                Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "Starting Measurement", Toast.LENGTH_LONG).show();
                         mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
                         description.setVisibility(View.INVISIBLE);
@@ -151,6 +157,8 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                             recorder = null;
                             isRecording = false;
                         }
+
+                        isMeasured = true;
 
                         Toast.makeText(getApplicationContext(), "Stopping Measurement",
                                 Toast.LENGTH_LONG).show();
