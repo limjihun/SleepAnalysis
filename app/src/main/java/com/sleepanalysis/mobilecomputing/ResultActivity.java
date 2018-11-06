@@ -4,7 +4,6 @@ import android.content.Intent;
 
 import android.media.MediaPlayer;
 import android.graphics.Color;
-import android.icu.text.DecimalFormat;
 import android.icu.text.SimpleDateFormat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
