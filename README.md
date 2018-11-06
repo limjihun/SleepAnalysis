@@ -1,7 +1,7 @@
 # SleepAnalysis
 
-develop
-#1 : 
+develop\n
+#1 : \n
 #2 : light sensor
 #2-service : light sensor graph
 #3 : audio recording first trial
