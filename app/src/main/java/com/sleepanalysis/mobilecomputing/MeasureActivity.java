@@ -1,5 +1,12 @@
 package com.sleepanalysis.mobilecomputing;
 
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -13,6 +20,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import com.github.mikephil.charting.data.Entry;
 
@@ -24,7 +38,14 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     final static int END = 1;
 
     int status = START;
-    long start_time, end_time, sleep_time = 0L;
+    long start_time, end_time, sleep_time, current_time = 0L;
+    Date date;
+    String date_string;
+    SimpleDateFormat date_format;
+
+    MediaRecorder recorder;
+    MediaPlayer player;
+    boolean isRecording = false;
 
     SensorManager mSensorManager;
     Sensor mLightSensor;
@@ -38,6 +59,14 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_measure);
+
+        // Permission for recording & writing external strorage
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO},
+                    10);}
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    10);}
 
         // button_result 클릭 시 ResultActivity로 전환
         ImageButton button_result = findViewById(R.id.result_button);
@@ -74,6 +103,34 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                         button_start.setText(getText(R.string.end));
                         start_time = System.currentTimeMillis();
 
+                        // recording
+                        recorder = new MediaRecorder();
+                        try{
+                            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+                            current_time = System.currentTimeMillis();
+                            date = new Date(current_time);
+                            date_format = new SimpleDateFormat("yyyy-MM-dd", Locale.KOREAN);
+                            date_string = Environment.getExternalStorageDirectory().getAbsolutePath() + "/SleepAnalysis/" + date_format.format(date) + "/";
+                            Log.d("date_string", date_string);
+
+                            File folder = new File(date_string);
+                            if (!folder.exists()) {
+                                folder.mkdirs();
+                            }
+
+                            recorder.setOutputFile(date_string + "recorded.mp3");
+
+                            recorder.prepare();
+                            recorder.start();
+                            isRecording = true;
+                        } catch (IOException e){
+                            Log.d("Record_Failed", "Start_Record_Failed");
+                        }
+
+                        Toast.makeText(getApplicationContext(), "Starting Measurement",
+                                Toast.LENGTH_LONG).show();
                         mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
                         description.setVisibility(View.INVISIBLE);
@@ -90,11 +147,22 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                         mSensorManager.unregisterListener(MeasureActivity.this);
 
                         status = START;
+                        Log.d("is Recording? ", String.valueOf(isRecording));
+
+                        if (isRecording) {
+                            recorder.stop();
+                            recorder.release();
+                            recorder = null;
+                            isRecording = false;
+                        }
+
+                        Toast.makeText(getApplicationContext(), "Stopping Measurement",
+                                Toast.LENGTH_LONG).show();
+
                         Log.d("End time: ", String.valueOf(end_time));
                         break;
 
                 }
-
             }
         });
     }
