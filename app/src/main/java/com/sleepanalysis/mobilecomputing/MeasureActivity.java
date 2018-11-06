@@ -113,15 +113,11 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                             date = new Date(current_time);
                             date_format = new SimpleDateFormat("yyyy-MM-dd", Locale.KOREAN);
                             date_string = Environment.getExternalStorageDirectory().getAbsolutePath() + "/SleepAnalysis/" + date_format.format(date) + "/";
-                            Log.d("date_string", date_string);
-
                             File folder = new File(date_string);
                             if (!folder.exists()) {
                                 folder.mkdirs();
                             }
-
                             recorder.setOutputFile(date_string + "recorded.mp3");
-
                             recorder.prepare();
                             recorder.start();
                             isRecording = true;

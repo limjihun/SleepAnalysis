@@ -2,17 +2,14 @@ package com.sleepanalysis.mobilecomputing;
 
 import android.content.Intent;
 
-import android.media.MediaPlayer;
 import android.graphics.Color;
 import android.icu.text.SimpleDateFormat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
@@ -29,8 +26,6 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class ResultActivity extends AppCompatActivity {
-    private MediaPlayer mediaPlayer;
-    String second, minute, hour;
     String time;
   
     @Override
@@ -39,8 +34,6 @@ public class ResultActivity extends AppCompatActivity {
         setContentView(R.layout.activity_result);
 
         TextView sleep_time_result = findViewById(R.id.sleep_time_result);
-        Button button_play = findViewById(R.id.play_button);
-        Button button_stop = findViewById(R.id.stop_button);
 
         Intent intent = getIntent();
 
@@ -60,31 +53,6 @@ public class ResultActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(ResultActivity.this, MeasureActivity.class);
                 startActivity(intent);
-            }
-        });
-
-        // Play Button
-        button_play.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    playAudio();
-                    Toast.makeText(getApplicationContext(), "Play", Toast.LENGTH_LONG).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
-
-        // Stop Button
-        button_stop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mediaPlayer != null) {
-                    mediaPlayer.stop();
-                    Toast.makeText(getApplicationContext(), "Stop", Toast.LENGTH_LONG).show();
-                }
             }
         });
  
@@ -115,9 +83,6 @@ public class ResultActivity extends AppCompatActivity {
                 }
 
                 Log.d("parameter_raw", String.valueOf(value));
-
-//                Date date = new Date((int)value * 1000);
-
                 Log.d("parameter_date", String.valueOf(date));
 
                 return return_format.format(date);
@@ -159,27 +124,5 @@ public class ResultActivity extends AppCompatActivity {
         chart_light.setData(data_light);
         chart_light.animateXY(2000, 2000);
         chart_light.invalidate();
-    }
-
-    private void playAudio() {
-        killMediaPlayer();
-
-        mediaPlayer = MediaPlayer.create(this, R.raw.test1);
-        mediaPlayer.start();
-    }
-
-    protected void onDestroy() {
-        super.onDestroy();
-        killMediaPlayer();
-    }
-
-    private void killMediaPlayer() {
-        if (mediaPlayer != null) {
-            try {
-                mediaPlayer.release();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 }
