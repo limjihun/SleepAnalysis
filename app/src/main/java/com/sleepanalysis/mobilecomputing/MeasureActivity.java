@@ -32,7 +32,7 @@ import com.github.mikephil.charting.data.Entry;
 
 import java.util.ArrayList;
 
-public class MeasureActivity extends AppCompatActivity implements SensorEventListener {
+public class MeasureActivity extends AppCompatActivity {
 
     final static int START = 0;
     final static int END = 1;
@@ -48,10 +48,19 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
     boolean isRecording = false;
 
     SensorManager mSensorManager;
+
     Sensor mLightSensor;
+    SensorEventListener mLightListener;
     TextView light_info;
     ArrayList<Entry> values_light;
     long time, previous;
+
+    SensorEventListener mAccListener;
+    Sensor mAccSensor;
+    double accX;
+    double accY;
+    double accZ;
+    TextView acc_info;
 
     TextView description;
     boolean isMeasured;
@@ -94,9 +103,14 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
 
         mSensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
         mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+        mLightListener = new LightListener();
         light_info = findViewById(R.id.light_test);
         values_light = new ArrayList<Entry>();
         previous = -1;
+
+        mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mAccListener = new AccListener();
+        acc_info = findViewById(R.id.acc_test);
 
         description = findViewById(R.id.description);
 
@@ -133,7 +147,8 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                         }
 
                         Toast.makeText(getApplicationContext(), "Starting Measurement", Toast.LENGTH_LONG).show();
-                        mSensorManager.registerListener(MeasureActivity.this, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                        mSensorManager.registerListener(mLightListener, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                        mSensorManager.registerListener(mAccListener, mAccSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
                         description.setVisibility(View.INVISIBLE);
 
@@ -146,7 +161,8 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
                         end_time = System.currentTimeMillis();
 
                         description.setVisibility(View.VISIBLE);
-                        mSensorManager.unregisterListener(MeasureActivity.this);
+                        mSensorManager.unregisterListener(mLightListener);
+                        mSensorManager.unregisterListener(mAccListener);
 
                         status = START;
                         Log.d("is Recording? ", String.valueOf(isRecording));
@@ -171,22 +187,34 @@ public class MeasureActivity extends AppCompatActivity implements SensorEventLis
         });
     }
 
-    public void onAccuracyChanged(Sensor sensor, int accuracy){
-    }
+    private class LightListener implements SensorEventListener {
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
 
-    public void onSensorChanged(SensorEvent event){
-        if(event.sensor.getType() == Sensor.TYPE_LIGHT){
+        public void onSensorChanged(SensorEvent event) {
             light_info.setText(String.valueOf(event.values[0]));
             time = System.currentTimeMillis() / 1000;
             if (time - previous < 1) return;
             previous = time;
-//            String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
+//              String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
             long temp = ((time / 3600 + 9) % 24) * 10000 + (time / 60 % 60) * 100 + (time % 60);
             Log.d("parameter_before", String.valueOf(temp));
-//            Log.d("parameter_before", String.valueOf(time + 32400));
-//            values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
-//            values_light.add(new Entry(time + 32400, event.values[0]));
+//              Log.d("parameter_before", String.valueOf(time + 32400));
+//              values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
+//              values_light.add(new Entry(time + 32400, event.values[0]));
             values_light.add(new Entry(temp, event.values[0]));
+        }
+    }
+
+    private class AccListener implements SensorEventListener {
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        }
+
+        public void onSensorChanged(SensorEvent event) {
+            accX = event.values[0];
+            accY = event.values[1];
+            accZ = event.values[2];
+            acc_info.setText(String.format("%.4f", accX) + "\n" + String.format("%4f", accY) + "\n" + String.format("%4f", accZ));
         }
     }
 }
