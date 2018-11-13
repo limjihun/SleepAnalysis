@@ -23,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -42,6 +43,8 @@ public class MeasureActivity extends AppCompatActivity {
     Date date;
     String date_string;
     SimpleDateFormat date_format;
+    FileOutputStream acc_fos;
+    FileOutputStream light_fos;
 
     MediaRecorder recorder;
     MediaPlayer player;
@@ -69,6 +72,11 @@ public class MeasureActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_measure);
+
+        // file name format
+        current_time = System.currentTimeMillis();
+        date = new Date(current_time);
+        date_format = new SimpleDateFormat("yyyy-MM-dd", Locale.KOREAN);
 
         // Permission for recording & writing external strorage
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -130,9 +138,6 @@ public class MeasureActivity extends AppCompatActivity {
                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
                             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-                            current_time = System.currentTimeMillis();
-                            date = new Date(current_time);
-                            date_format = new SimpleDateFormat("yyyy-MM-dd", Locale.KOREAN);
                             date_string = Environment.getExternalStorageDirectory().getAbsolutePath() + "/SleepAnalysis/" + date_format.format(date) + "/";
                             File folder = new File(date_string);
                             if (!folder.exists()) {
@@ -150,6 +155,14 @@ public class MeasureActivity extends AppCompatActivity {
                         mSensorManager.registerListener(mLightListener, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
                         mSensorManager.registerListener(mAccListener, mAccSensor, SensorManager.SENSOR_DELAY_NORMAL);
 
+                        // sensing data file
+                        File light_file = new File(date_string + "light.txt");
+                        File acc_file = new File(date_string + "acc.txt");
+                        try {
+                            light_fos = new FileOutputStream(light_file);
+                            acc_fos = new FileOutputStream(acc_file);
+                        } catch (IOException e) {}
+
                         description.setVisibility(View.INVISIBLE);
 
                         status = END;
@@ -163,6 +176,12 @@ public class MeasureActivity extends AppCompatActivity {
                         description.setVisibility(View.VISIBLE);
                         mSensorManager.unregisterListener(mLightListener);
                         mSensorManager.unregisterListener(mAccListener);
+
+                        // close sensing file
+                        try {
+                            light_fos.close();
+                            acc_fos.close();
+                        } catch (IOException e) {}
 
                         status = START;
                         Log.d("is Recording? ", String.valueOf(isRecording));
@@ -203,6 +222,17 @@ public class MeasureActivity extends AppCompatActivity {
 //              values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
 //              values_light.add(new Entry(time + 32400, event.values[0]));
             values_light.add(new Entry(temp, event.values[0]));
+
+            // save data file
+            current_time = System.currentTimeMillis();
+            date = new Date(current_time);
+            date_format = new SimpleDateFormat("hh:mm:ss", Locale.KOREAN);
+
+            String data = " " + String.format("%.4f", event.values[0]) + "\n";
+            try {
+                light_fos.write(date_format.format(date).getBytes());
+                light_fos.write(data.getBytes());
+            } catch (IOException e) {}
         }
     }
 
@@ -211,10 +241,25 @@ public class MeasureActivity extends AppCompatActivity {
         }
 
         public void onSensorChanged(SensorEvent event) {
+            time = System.currentTimeMillis() / 1000;
+            if (time - previous < 1) return;
+            previous = time;
+
             accX = event.values[0];
             accY = event.values[1];
             accZ = event.values[2];
             acc_info.setText(String.format("%.4f", accX) + "\n" + String.format("%4f", accY) + "\n" + String.format("%4f", accZ));
+
+            // save data file
+            current_time = System.currentTimeMillis();
+            date = new Date(current_time);
+            date_format = new SimpleDateFormat("hh:mm:ss", Locale.KOREAN);
+
+            String data = " " + String.format("%.4f", accX) + " " + String.format("%.4f", accY) + " " + String.format("%.4f", accZ) + "\n";
+            try {
+                acc_fos.write(date_format.format(date).getBytes());
+                acc_fos.write(data.getBytes());
+            } catch (IOException e) {}
         }
     }
 }
