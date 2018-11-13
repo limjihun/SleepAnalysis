@@ -211,13 +211,6 @@ public class MeasureActivity extends AppCompatActivity {
             time_light = System.currentTimeMillis() / 1000;
             if (time_light - previous_light < 1) return;
             previous_light = time_light;
-//              String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
-//            long temp = ((time / 3600 + 9) % 24) * 10000 + (time / 60 % 60) * 100 + (time % 60);
-//            Log.d("parameter_before", String.valueOf(temp));
-//              Log.d("parameter_before", String.valueOf(time + 32400));
-//              values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
-//              values_light.add(new Entry(time + 32400, event.values[0]));
-//            values_light.add(new Entry(temp, event.values[0]));
 
             // save data file
             current_time = System.currentTimeMillis();
