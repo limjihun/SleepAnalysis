@@ -22,11 +22,17 @@ import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 
 public class ResultActivity extends AppCompatActivity {
     String time;
+
+
   
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +61,33 @@ public class ResultActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
- 
+
+        // Birghtness Graph Load
+        FileReader light_fr;
+        BufferedReader light_br;
+        ArrayList<Entry> values_light = new ArrayList<Entry>();
+        String date_string = intent.getExtras().getString("date_string");
+        File light_file = new File(date_string + "light.txt");
+        try {
+            light_fr = new FileReader(light_file);
+            light_br = new BufferedReader(light_fr);
+            String line;
+//            String d, v;
+            String dd;
+            int d;
+            float v;
+            while((line = light_br.readLine()) != null){
+                d = Integer.parseInt(line.substring(0, 8).replace(":", ""));
+                v = Float.parseFloat(line.substring(10));
+                values_light.add(new Entry(d, v));
+                Log.d("llllllll", String.valueOf(d));
+                Log.d("lllllllll", String.valueOf(v));
+//                Log.d(";;;;;;;;;", line);
+            }
+        } catch (IOException e) {
+            Log.d("errrrrrrrrrrrrrrrrrrrrrrrrr", "error in file");
+        }
+
         // Brightness Data Chart
         LineChart chart_light = findViewById(R.id.brightness_chart);
         chart_light.setDescription(null);
@@ -94,9 +126,6 @@ public class ResultActivity extends AppCompatActivity {
         left_axis_light.setDrawGridLines(true);
         left_axis_light.setDrawAxisLine(true);
         left_axis_light.setAxisMinimum(0);
-
-        // Load Data in intent extra
-        ArrayList<Entry> values_light = intent.getExtras().getParcelableArrayList("values_light");
 
         // DataSet (= Line)
         LineDataSet dataset_light = new LineDataSet(values_light, "Brightness");

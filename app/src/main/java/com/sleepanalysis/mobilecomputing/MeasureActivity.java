@@ -47,7 +47,6 @@ public class MeasureActivity extends AppCompatActivity {
     FileOutputStream light_fos;
 
     MediaRecorder recorder;
-    MediaPlayer player;
     boolean isRecording = false;
 
     SensorManager mSensorManager;
@@ -55,8 +54,7 @@ public class MeasureActivity extends AppCompatActivity {
     Sensor mLightSensor;
     SensorEventListener mLightListener;
     TextView light_info;
-    ArrayList<Entry> values_light;
-    long time, previous;
+    long time_light, previous_light, time_acc, previous_acc;
 
     SensorEventListener mAccListener;
     Sensor mAccSensor;
@@ -77,6 +75,11 @@ public class MeasureActivity extends AppCompatActivity {
         current_time = System.currentTimeMillis();
         date = new Date(current_time);
         date_format = new SimpleDateFormat("yyyy-MM-dd", Locale.KOREAN);
+        date_string = Environment.getExternalStorageDirectory().getAbsolutePath() + "/SleepAnalysis/" + date_format.format(date) + "/";
+        File folder = new File(date_string);
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
 
         // Permission for recording & writing external strorage
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -100,10 +103,8 @@ public class MeasureActivity extends AppCompatActivity {
                 }
 
                 sleep_time = end_time - start_time;
+                intent.putExtra("date_string", date_string);
                 intent.putExtra("sleep_time", sleep_time);
-                intent.putExtra("start_time", start_time);
-                intent.putExtra("end_time", end_time);
-                intent.putExtra("values_light", values_light);
                 Log.d("Sleep time : ", String.valueOf(sleep_time));
                 startActivity(intent);
             }
@@ -113,8 +114,8 @@ public class MeasureActivity extends AppCompatActivity {
         mLightSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         mLightListener = new LightListener();
         light_info = findViewById(R.id.light_test);
-        values_light = new ArrayList<Entry>();
-        previous = -1;
+        previous_light = -1;
+        previous_acc = -1;
 
         mAccSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mAccListener = new AccListener();
@@ -138,11 +139,6 @@ public class MeasureActivity extends AppCompatActivity {
                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
                             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-                            date_string = Environment.getExternalStorageDirectory().getAbsolutePath() + "/SleepAnalysis/" + date_format.format(date) + "/";
-                            File folder = new File(date_string);
-                            if (!folder.exists()) {
-                                folder.mkdirs();
-                            }
                             recorder.setOutputFile(date_string + "recorded.mp3");
                             recorder.prepare();
                             recorder.start();
@@ -212,16 +208,16 @@ public class MeasureActivity extends AppCompatActivity {
 
         public void onSensorChanged(SensorEvent event) {
             light_info.setText(String.valueOf(event.values[0]));
-            time = System.currentTimeMillis() / 1000;
-            if (time - previous < 1) return;
-            previous = time;
+            time_light = System.currentTimeMillis() / 1000;
+            if (time_light - previous_light < 1) return;
+            previous_light = time_light;
 //              String temp = String.format("%02d", (time / 3600 + 9) % 24) + String.format("%02d", time / 60 % 60) + String.format("%02d", time % 60);
-            long temp = ((time / 3600 + 9) % 24) * 10000 + (time / 60 % 60) * 100 + (time % 60);
-            Log.d("parameter_before", String.valueOf(temp));
+//            long temp = ((time / 3600 + 9) % 24) * 10000 + (time / 60 % 60) * 100 + (time % 60);
+//            Log.d("parameter_before", String.valueOf(temp));
 //              Log.d("parameter_before", String.valueOf(time + 32400));
 //              values_light.add(new Entry(Integer.valueOf(temp), event.values[0]));
 //              values_light.add(new Entry(time + 32400, event.values[0]));
-            values_light.add(new Entry(temp, event.values[0]));
+//            values_light.add(new Entry(temp, event.values[0]));
 
             // save data file
             current_time = System.currentTimeMillis();
@@ -241,9 +237,9 @@ public class MeasureActivity extends AppCompatActivity {
         }
 
         public void onSensorChanged(SensorEvent event) {
-            time = System.currentTimeMillis() / 1000;
-            if (time - previous < 1) return;
-            previous = time;
+            time_acc = System.currentTimeMillis() / 1000;
+            if (time_acc - previous_acc < 1) return;
+            previous_acc = time_acc;
 
             accX = event.values[0];
             accY = event.values[1];
