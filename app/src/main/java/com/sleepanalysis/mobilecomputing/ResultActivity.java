@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
@@ -28,6 +29,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+
+import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
+import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
+import cafe.adriel.androidaudioconverter.callback.ILoadCallback;
+import cafe.adriel.androidaudioconverter.model.AudioFormat;
 
 public class ResultActivity extends AppCompatActivity {
     String time;
@@ -153,5 +159,34 @@ public class ResultActivity extends AppCompatActivity {
         chart_light.setData(data_light);
         chart_light.animateXY(2000, 2000);
         chart_light.invalidate();
+
+
+        // mp3 to wav
+        AndroidAudioConverter.load(this, new ILoadCallback() {
+            @Override
+            public void onSuccess() {
+            }
+            @Override
+            public void onFailure(Exception error) {
+                Log.d("conversion", "Conversion Failed 1");
+            }
+        });
+        File recorded = new File(date_string + "recorded.mp3");
+        IConvertCallback callback = new IConvertCallback() {
+            @Override
+            public void onSuccess(File convertedFile) {
+                Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_LONG).show();
+            }
+            @Override
+            public void onFailure(Exception error) {
+                Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_LONG).show();
+            }
+        };
+        AndroidAudioConverter.with(this)
+                .setFile(recorded)
+                .setFormat(AudioFormat.WAV)
+                .setCallback(callback)
+                .convert();
     }
+
 }
