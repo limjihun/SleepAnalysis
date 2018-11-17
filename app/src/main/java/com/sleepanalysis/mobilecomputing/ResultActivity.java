@@ -2,6 +2,7 @@ package com.sleepanalysis.mobilecomputing;
 
 import android.content.Intent;
 
+import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.icu.text.SimpleDateFormat;
 import android.support.v7.app.AppCompatActivity;
@@ -28,8 +29,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
+import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.AudioProcessor;
+import be.tarsos.dsp.io.android.AndroidFFMPEGLocator;
+import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import be.tarsos.dsp.mfcc.MFCC;
 import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
 import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
 import cafe.adriel.androidaudioconverter.callback.ILoadCallback;
@@ -38,8 +47,6 @@ import cafe.adriel.androidaudioconverter.model.AudioFormat;
 public class ResultActivity extends AppCompatActivity {
     String time;
 
-
-  
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,7 +57,7 @@ public class ResultActivity extends AppCompatActivity {
         Intent intent = getIntent();
 
         // sleep_time 받아와서 띄우기
-        int sleep_time = (int)intent.getExtras().getLong("sleep_time");
+        int sleep_time = (int) intent.getExtras().getLong("sleep_time");
         int h, m, s;
         h = sleep_time / (1000 * 60 * 60);
         m = (sleep_time / (1000 * 60)) % 60;
@@ -82,7 +89,7 @@ public class ResultActivity extends AppCompatActivity {
             String dd;
             int d;
             float v;
-            while((line = light_br.readLine()) != null){
+            while ((line = light_br.readLine()) != null) {
                 d = Integer.parseInt(line.substring(0, 8).replace(":", ""));
                 v = Float.parseFloat(line.substring(10));
                 values_light.add(new Entry(d, v));
@@ -114,9 +121,9 @@ public class ResultActivity extends AppCompatActivity {
                 SimpleDateFormat return_format = new SimpleDateFormat("hh:mm:ss");
 
                 Date date = null;
-                try{
-                    date = parse_format.parse(String.valueOf((int)value));
-                }catch ( Exception e ){
+                try {
+                    date = parse_format.parse(String.valueOf((int) value));
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
@@ -162,7 +169,7 @@ public class ResultActivity extends AppCompatActivity {
 
 
         // mp3 to wav
-        AndroidAudioConverter.load(this, new ILoadCallback() {
+        /*AndroidAudioConverter.load(this, new ILoadCallback() {
             @Override
             public void onSuccess() {
             }
@@ -187,6 +194,63 @@ public class ResultActivity extends AppCompatActivity {
                 .setFormat(AudioFormat.WAV)
                 .setCallback(callback)
                 .convert();
-    }
+    }*/
 
+        String path = date_string + "recorded.wav";
+        int sampleRate = 22050;
+        int bufferSize = 1024;
+        int bufferOverlap = 128;
+        new AndroidFFMPEGLocator(this);
+        final List<float[]> mfccList = new ArrayList<>(200);
+        final AudioDispatcher dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
+        final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 300, 3000);
+        dispatcher.addAudioProcessor(mfcc);
+        dispatcher.addAudioProcessor(new AudioProcessor() {
+
+            @Override
+            public void processingFinished() {
+            }
+
+            @Override
+            public boolean process(AudioEvent audioEvent) {
+                mfccList.add(mfcc.getMFCC());
+                return true;
+            }
+        });
+        dispatcher.run();
+
+        for (int i = 0; i < mfccList.size(); i++) {
+//            Log.d("mfccList", String.valueOf(mfccList.get(i)));
+            Log.d("mfccList", Arrays.toString(mfccList.get(i)));
+        }
+
+        /*int sampleRate = 44100;
+        int bufferSize = 8192;
+        int bufferOverlap = 128;
+        final AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(sampleRate, bufferSize, bufferOverlap);
+        final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 300, 3000);
+        dispatcher.addAudioProcessor(mfcc);
+        dispatcher.addAudioProcessor(new AudioProcessor() {
+            @Override
+            public void processingFinished() {
+                Toast.makeText(getApplicationContext(), "Finished", Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public boolean process(AudioEvent audioEvent) {
+
+                mfcc.process(audioEvent);
+                final float audio_float[] = mfcc.getMFCC();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), Arrays.toString(audio_float), Toast.LENGTH_LONG).show();
+                    }
+                });
+                return true;
+            }
+        });
+        new Thread(dispatcher,"Audio MFCC").start();*/
+
+    }
 }
