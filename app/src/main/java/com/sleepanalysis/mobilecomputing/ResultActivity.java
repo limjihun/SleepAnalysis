@@ -26,8 +26,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
+
+import weka.core.Instances;
 
 public class ResultActivity extends AppCompatActivity {
     String time;
@@ -153,5 +156,36 @@ public class ResultActivity extends AppCompatActivity {
         chart_light.setData(data_light);
         chart_light.animateXY(2000, 2000);
         chart_light.invalidate();
+
+        // Weka generated code
+        WekaWrapper wrapper = new WekaWrapper();
+        int count = 0;
+        int numInstances = 0;
+        int numAttributes = 0;
+        try {
+            // test data
+            Instances data = new Instances(new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.test3))));
+            // set snore Yes or No index
+            data.setClassIndex(data.numAttributes()-1);
+            numInstances = data.numInstances();
+            for (int i=0; i<numInstances; i++) {
+                double result = wrapper.classifyInstance(data.instance(i));
+
+                Log.d("Weka Result", data.classAttribute().value((int)result));
+                Log.d("Weka Result2", data.instance(i).toString());
+                String instance = data.instance(i).toString();
+                String[] temp = instance.split(",");
+                String correctData = temp[temp.length-1];
+                Log.d("Weka Result3", correctData);
+
+                if(data.classAttribute().value((int)result).equals(correctData)) {
+                    count++;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Log.d("Weka Result", "correct : " + String.valueOf(count * 100 / numInstances) + "%");
+
     }
 }
