@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -44,6 +45,8 @@ import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
 import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
 import cafe.adriel.androidaudioconverter.callback.ILoadCallback;
 import cafe.adriel.androidaudioconverter.model.AudioFormat;
+
+import weka.core.Instances;
 
 public class ResultActivity extends AppCompatActivity {
     String time;
@@ -167,7 +170,6 @@ public class ResultActivity extends AppCompatActivity {
         chart_light.setData(data_light);
         chart_light.animateXY(2000, 2000);
         chart_light.invalidate();
-
 
         /*// mp3 to wav
         AndroidAudioConverter.load(this, new ILoadCallback() {
@@ -334,7 +336,38 @@ public class ResultActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.d("mfccList", "first");}
             */
+      
+        // Weka generated code
+        WekaWrapper wrapper = new WekaWrapper();
+        int count = 0;
+        int numInstances = 0;
+        try {
+            // test data
+            Instances data = new Instances(new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.snoring_test_android2))));
+            // set snore Yes or No index
+            data.setClassIndex(data.numAttributes()-1);
+            numInstances = data.numInstances();
+            for (int i=0; i<numInstances; i++) {
+                double result = wrapper.classifyInstance(data.instance(i));
 
+                Log.d("Weka Result", data.classAttribute().value((int)result));
+                if (data.classAttribute().value((int)result).equals("yes")) {
+                    count++;
+                }
+//                Log.d("Weka Result2", data.instance(i).toString());
+//                String instance = data.instance(i).toString();
+//                String[] temp = instance.split(",");
+//                String correctData = temp[temp.length-1];
+//                Log.d("Weka Result3", correctData);
+
+//                if(data.classAttribute().value((int)result).equals(correctData)) {
+//                    count++;
+//                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        Log.d("Weka Result", "snore : " + String.valueOf(count * 100 / numInstances) + "%");
     }
 }
 
