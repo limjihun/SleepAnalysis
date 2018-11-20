@@ -161,10 +161,9 @@ public class ResultActivity extends AppCompatActivity {
         WekaWrapper wrapper = new WekaWrapper();
         int count = 0;
         int numInstances = 0;
-        int numAttributes = 0;
         try {
             // test data
-            Instances data = new Instances(new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.test3))));
+            Instances data = new Instances(new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.snoring_test_android2))));
             // set snore Yes or No index
             data.setClassIndex(data.numAttributes()-1);
             numInstances = data.numInstances();
@@ -172,20 +171,23 @@ public class ResultActivity extends AppCompatActivity {
                 double result = wrapper.classifyInstance(data.instance(i));
 
                 Log.d("Weka Result", data.classAttribute().value((int)result));
-                Log.d("Weka Result2", data.instance(i).toString());
-                String instance = data.instance(i).toString();
-                String[] temp = instance.split(",");
-                String correctData = temp[temp.length-1];
-                Log.d("Weka Result3", correctData);
-
-                if(data.classAttribute().value((int)result).equals(correctData)) {
+                if (data.classAttribute().value((int)result).equals("yes")) {
                     count++;
                 }
+//                Log.d("Weka Result2", data.instance(i).toString());
+//                String instance = data.instance(i).toString();
+//                String[] temp = instance.split(",");
+//                String correctData = temp[temp.length-1];
+//                Log.d("Weka Result3", correctData);
+
+//                if(data.classAttribute().value((int)result).equals(correctData)) {
+//                    count++;
+//                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Log.d("Weka Result", "correct : " + String.valueOf(count * 100 / numInstances) + "%");
+        Log.d("Weka Result", "snore : " + String.valueOf(count * 100 / numInstances) + "%");
 
     }
 }
