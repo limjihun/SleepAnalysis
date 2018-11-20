@@ -2,6 +2,7 @@ package com.sleepanalysis.mobilecomputing;
 
 import android.content.Intent;
 
+import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.icu.text.SimpleDateFormat;
 import android.support.v7.app.AppCompatActivity;
@@ -10,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
@@ -24,19 +26,31 @@ import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+
+import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.AudioProcessor;
+import be.tarsos.dsp.io.android.AndroidFFMPEGLocator;
+import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import be.tarsos.dsp.mfcc.MFCC;
+import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
+import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
+import cafe.adriel.androidaudioconverter.callback.ILoadCallback;
+import cafe.adriel.androidaudioconverter.model.AudioFormat;
 
 import weka.core.Instances;
 
 public class ResultActivity extends AppCompatActivity {
     String time;
 
-
-  
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,7 +61,7 @@ public class ResultActivity extends AppCompatActivity {
         Intent intent = getIntent();
 
         // sleep_time 받아와서 띄우기
-        int sleep_time = (int)intent.getExtras().getLong("sleep_time");
+        int sleep_time = (int) intent.getExtras().getLong("sleep_time");
         int h, m, s;
         h = sleep_time / (1000 * 60 * 60);
         m = (sleep_time / (1000 * 60)) % 60;
@@ -79,7 +93,7 @@ public class ResultActivity extends AppCompatActivity {
             String dd;
             int d;
             float v;
-            while((line = light_br.readLine()) != null){
+            while ((line = light_br.readLine()) != null) {
                 d = Integer.parseInt(line.substring(0, 8).replace(":", ""));
                 v = Float.parseFloat(line.substring(10));
                 values_light.add(new Entry(d, v));
@@ -111,9 +125,9 @@ public class ResultActivity extends AppCompatActivity {
                 SimpleDateFormat return_format = new SimpleDateFormat("hh:mm:ss");
 
                 Date date = null;
-                try{
-                    date = parse_format.parse(String.valueOf((int)value));
-                }catch ( Exception e ){
+                try {
+                    date = parse_format.parse(String.valueOf((int) value));
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
@@ -157,6 +171,172 @@ public class ResultActivity extends AppCompatActivity {
         chart_light.animateXY(2000, 2000);
         chart_light.invalidate();
 
+        /*// mp3 to wav
+        AndroidAudioConverter.load(this, new ILoadCallback() {
+            @Override
+            public void onSuccess() {
+            }
+            @Override
+            public void onFailure(Exception error) {
+                Log.d("conversion", "Conversion Failed 1");
+            }
+        });
+        File recorded = new File(date_string + "recorded.mp3");
+        IConvertCallback callback = new IConvertCallback() {
+            @Override
+            public void onSuccess(File convertedFile) {
+                Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_LONG).show();
+            }
+            @Override
+            public void onFailure(Exception error) {
+                Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_LONG).show();
+            }
+        };
+        AndroidAudioConverter.with(this)
+                .setFile(recorded)
+                .setFormat(AudioFormat.WAV)
+                .setCallback(callback)
+                .convert();*/
+
+//        try {
+//            Toast.makeText(getApplicationContext(), "Calculating", Toast.LENGTH_LONG).show();
+//            Thread.sleep(3000);
+//        } catch(InterruptedException e){}
+
+
+        String path = date_string + "recorded.wav";
+        File recorded_file = new File(path);
+        while(!recorded_file.exists()){
+        }
+        int sampleRate = 22050;
+        int bufferSize = 1024;
+        int bufferOverlap = 128;
+        new AndroidFFMPEGLocator(this);
+        final List<float[]> mfccList = new ArrayList<>(200);
+        AudioDispatcher dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
+        final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 300, 3000);
+        dispatcher.addAudioProcessor(mfcc);
+        dispatcher.addAudioProcessor(new AudioProcessor() {
+
+            @Override
+            public void processingFinished() {
+            }
+
+            @Override
+            public boolean process(AudioEvent audioEvent) {
+                mfccList.add(mfcc.getMFCC());
+                return true;
+            }
+        });
+        dispatcher.run();
+
+        try {
+            File mfcc_file = new File(date_string + "recorded.arff");
+            FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
+            String arff_info = "@relation snore\n" +
+                    "\n" +
+                    "@attribute mfcc01 real\n" +
+                    "@attribute mfcc02 real\n" +
+                    "@attribute mfcc03 real\n" +
+                    "@attribute mfcc04 real\n" +
+                    "@attribute mfcc05 real\n" +
+                    "@attribute mfcc06 real\n" +
+                    "@attribute mfcc07 real\n" +
+                    "@attribute mfcc08 real\n" +
+                    "@attribute mfcc09 real\n" +
+                    "@attribute mfcc10 real\n" +
+                    "@attribute mfcc11 real\n" +
+                    "@attribute mfcc12 real\n" +
+                    "@attribute mfcc13 real\n" +
+                    "@attribute mfcc14 real\n" +
+                    "@attribute mfcc15 real\n" +
+                    "@attribute mfcc16 real\n" +
+                    "@attribute mfcc17 real\n" +
+                    "@attribute mfcc18 real\n" +
+                    "@attribute mfcc19 real\n" +
+                    "@attribute mfcc20 real\n" +
+                    "@attribute is_snore {yes, no}\n" +
+                    "\n" +
+                    "@data\n";
+            mfcc_fos.write(arff_info.getBytes());
+            for (int i = 0; i < mfccList.size(); i++) {
+                mfcc_fos.write((Arrays.toString(mfccList.get(i)) + ", ?\n")
+                        .replace("[", "")
+                        .replace("]", "")
+                        .getBytes());
+            }
+            mfcc_fos.close();
+            Toast.makeText(getApplicationContext(), "MFCC Extracted", Toast.LENGTH_LONG).show();
+        } catch (IOException e) {}
+
+
+        // For Decision Tree Modeling!
+        /*try {
+            File mfcc_file = new File(date_string + "non_snoring_android.arff");
+            FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
+            String arff_info = "@relation snore\n" +
+                    "\n" +
+                    "@attribute mfcc01 real\n" +
+                    "@attribute mfcc02 real\n" +
+                    "@attribute mfcc03 real\n" +
+                    "@attribute mfcc04 real\n" +
+                    "@attribute mfcc05 real\n" +
+                    "@attribute mfcc06 real\n" +
+                    "@attribute mfcc07 real\n" +
+                    "@attribute mfcc08 real\n" +
+                    "@attribute mfcc09 real\n" +
+                    "@attribute mfcc10 real\n" +
+                    "@attribute mfcc11 real\n" +
+                    "@attribute mfcc12 real\n" +
+                    "@attribute mfcc13 real\n" +
+                    "@attribute mfcc14 real\n" +
+                    "@attribute mfcc15 real\n" +
+                    "@attribute mfcc16 real\n" +
+                    "@attribute mfcc17 real\n" +
+                    "@attribute mfcc18 real\n" +
+                    "@attribute mfcc19 real\n" +
+                    "@attribute mfcc20 real\n" +
+                    "@attribute is_snore {yes, no}\n" +
+                    "\n" +
+                    "@data\n";
+            mfcc_fos.write(arff_info.getBytes());
+
+            for(int i=1;i<201;i++){
+                path = date_string + "non_snoring/non_snoring (" + String.valueOf(i) + ").wav";
+                //new AndroidFFMPEGLocator(this);
+                final List<float[]> mfccList1 = new ArrayList<>(200);
+                dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
+                final MFCC mfcc1 = new MFCC(bufferSize, sampleRate, 20, 50, 0, 20000);
+                dispatcher.addAudioProcessor(mfcc1);
+                dispatcher.addAudioProcessor(new AudioProcessor() {
+
+                    @Override
+                    public void processingFinished() {
+                    }
+
+                    @Override
+                    public boolean process(AudioEvent audioEvent) {
+                        mfccList1.add(mfcc1.getMFCC());
+                        return true;
+                    }
+                });
+                dispatcher.run();
+
+                for (int j = 0; j < mfccList1.size(); j++) {
+                    mfcc_fos.write(
+                            (Arrays.toString(mfccList1.get(j)) + ", no\n")
+                                    .replace("[", "")
+                                    .replace("]", "")
+                                    .getBytes()
+                    );
+                }
+                Log.d("mfcc_complete", String.valueOf(i));
+            }
+            mfcc_fos.close();
+        } catch (IOException e) {
+            Log.d("mfccList", "first");}
+            */
+      
         // Weka generated code
         WekaWrapper wrapper = new WekaWrapper();
         int count = 0;
@@ -188,6 +368,6 @@ public class ResultActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         Log.d("Weka Result", "snore : " + String.valueOf(count * 100 / numInstances) + "%");
-
     }
 }
+
