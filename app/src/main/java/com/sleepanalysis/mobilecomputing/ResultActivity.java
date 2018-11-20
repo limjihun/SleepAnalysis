@@ -26,6 +26,7 @@ import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -168,8 +169,8 @@ public class ResultActivity extends AppCompatActivity {
         chart_light.invalidate();
 
 
-        // mp3 to wav
-        /*AndroidAudioConverter.load(this, new ILoadCallback() {
+        /*// mp3 to wav
+        AndroidAudioConverter.load(this, new ILoadCallback() {
             @Override
             public void onSuccess() {
             }
@@ -193,16 +194,24 @@ public class ResultActivity extends AppCompatActivity {
                 .setFile(recorded)
                 .setFormat(AudioFormat.WAV)
                 .setCallback(callback)
-                .convert();
-    }*/
+                .convert();*/
+
+//        try {
+//            Toast.makeText(getApplicationContext(), "Calculating", Toast.LENGTH_LONG).show();
+//            Thread.sleep(3000);
+//        } catch(InterruptedException e){}
+
 
         String path = date_string + "recorded.wav";
+        File recorded_file = new File(path);
+        while(!recorded_file.exists()){
+        }
         int sampleRate = 22050;
         int bufferSize = 1024;
         int bufferOverlap = 128;
         new AndroidFFMPEGLocator(this);
         final List<float[]> mfccList = new ArrayList<>(200);
-        final AudioDispatcher dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
+        AudioDispatcher dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
         final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 300, 3000);
         dispatcher.addAudioProcessor(mfcc);
         dispatcher.addAudioProcessor(new AudioProcessor() {
@@ -219,38 +228,113 @@ public class ResultActivity extends AppCompatActivity {
         });
         dispatcher.run();
 
-        for (int i = 0; i < mfccList.size(); i++) {
-//            Log.d("mfccList", String.valueOf(mfccList.get(i)));
-            Log.d("mfccList", Arrays.toString(mfccList.get(i)));
-        }
-
-        /*int sampleRate = 44100;
-        int bufferSize = 8192;
-        int bufferOverlap = 128;
-        final AudioDispatcher dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(sampleRate, bufferSize, bufferOverlap);
-        final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 300, 3000);
-        dispatcher.addAudioProcessor(mfcc);
-        dispatcher.addAudioProcessor(new AudioProcessor() {
-            @Override
-            public void processingFinished() {
-                Toast.makeText(getApplicationContext(), "Finished", Toast.LENGTH_LONG).show();
+        try {
+            File mfcc_file = new File(date_string + "recorded.arff");
+            FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
+            String arff_info = "@relation snore\n" +
+                    "\n" +
+                    "@attribute mfcc01 real\n" +
+                    "@attribute mfcc02 real\n" +
+                    "@attribute mfcc03 real\n" +
+                    "@attribute mfcc04 real\n" +
+                    "@attribute mfcc05 real\n" +
+                    "@attribute mfcc06 real\n" +
+                    "@attribute mfcc07 real\n" +
+                    "@attribute mfcc08 real\n" +
+                    "@attribute mfcc09 real\n" +
+                    "@attribute mfcc10 real\n" +
+                    "@attribute mfcc11 real\n" +
+                    "@attribute mfcc12 real\n" +
+                    "@attribute mfcc13 real\n" +
+                    "@attribute mfcc14 real\n" +
+                    "@attribute mfcc15 real\n" +
+                    "@attribute mfcc16 real\n" +
+                    "@attribute mfcc17 real\n" +
+                    "@attribute mfcc18 real\n" +
+                    "@attribute mfcc19 real\n" +
+                    "@attribute mfcc20 real\n" +
+                    "@attribute is_snore {yes, no}\n" +
+                    "\n" +
+                    "@data\n";
+            mfcc_fos.write(arff_info.getBytes());
+            for (int i = 0; i < mfccList.size(); i++) {
+                mfcc_fos.write((Arrays.toString(mfccList.get(i)) + ", ?\n")
+                        .replace("[", "")
+                        .replace("]", "")
+                        .getBytes());
             }
+            mfcc_fos.close();
+            Toast.makeText(getApplicationContext(), "MFCC Extracted", Toast.LENGTH_LONG).show();
+        } catch (IOException e) {}
 
-            @Override
-            public boolean process(AudioEvent audioEvent) {
 
-                mfcc.process(audioEvent);
-                final float audio_float[] = mfcc.getMFCC();
-                runOnUiThread(new Runnable() {
+        // For Decision Tree Modeling!
+        /*try {
+            File mfcc_file = new File(date_string + "non_snoring_android.arff");
+            FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
+            String arff_info = "@relation snore\n" +
+                    "\n" +
+                    "@attribute mfcc01 real\n" +
+                    "@attribute mfcc02 real\n" +
+                    "@attribute mfcc03 real\n" +
+                    "@attribute mfcc04 real\n" +
+                    "@attribute mfcc05 real\n" +
+                    "@attribute mfcc06 real\n" +
+                    "@attribute mfcc07 real\n" +
+                    "@attribute mfcc08 real\n" +
+                    "@attribute mfcc09 real\n" +
+                    "@attribute mfcc10 real\n" +
+                    "@attribute mfcc11 real\n" +
+                    "@attribute mfcc12 real\n" +
+                    "@attribute mfcc13 real\n" +
+                    "@attribute mfcc14 real\n" +
+                    "@attribute mfcc15 real\n" +
+                    "@attribute mfcc16 real\n" +
+                    "@attribute mfcc17 real\n" +
+                    "@attribute mfcc18 real\n" +
+                    "@attribute mfcc19 real\n" +
+                    "@attribute mfcc20 real\n" +
+                    "@attribute is_snore {yes, no}\n" +
+                    "\n" +
+                    "@data\n";
+            mfcc_fos.write(arff_info.getBytes());
+
+            for(int i=1;i<201;i++){
+                path = date_string + "non_snoring/non_snoring (" + String.valueOf(i) + ").wav";
+                //new AndroidFFMPEGLocator(this);
+                final List<float[]> mfccList1 = new ArrayList<>(200);
+                dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
+                final MFCC mfcc1 = new MFCC(bufferSize, sampleRate, 20, 50, 0, 20000);
+                dispatcher.addAudioProcessor(mfcc1);
+                dispatcher.addAudioProcessor(new AudioProcessor() {
+
                     @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(), Arrays.toString(audio_float), Toast.LENGTH_LONG).show();
+                    public void processingFinished() {
+                    }
+
+                    @Override
+                    public boolean process(AudioEvent audioEvent) {
+                        mfccList1.add(mfcc1.getMFCC());
+                        return true;
                     }
                 });
-                return true;
+                dispatcher.run();
+
+                for (int j = 0; j < mfccList1.size(); j++) {
+                    mfcc_fos.write(
+                            (Arrays.toString(mfccList1.get(j)) + ", no\n")
+                                    .replace("[", "")
+                                    .replace("]", "")
+                                    .getBytes()
+                    );
+                }
+                Log.d("mfcc_complete", String.valueOf(i));
             }
-        });
-        new Thread(dispatcher,"Audio MFCC").start();*/
+            mfcc_fos.close();
+        } catch (IOException e) {
+            Log.d("mfccList", "first");}
+            */
 
     }
 }
+

@@ -33,6 +33,11 @@ import com.github.mikephil.charting.data.Entry;
 
 import java.util.ArrayList;
 
+import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
+import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
+import cafe.adriel.androidaudioconverter.callback.ILoadCallback;
+import cafe.adriel.androidaudioconverter.model.AudioFormat;
+
 public class MeasureActivity extends AppCompatActivity {
 
     final static int START = 0;
@@ -191,6 +196,32 @@ public class MeasureActivity extends AppCompatActivity {
 
                         isMeasured = true;
 
+                        // mp3 to wav
+                        AndroidAudioConverter.load(MeasureActivity.this, new ILoadCallback() {
+                            @Override
+                            public void onSuccess() {
+                            }
+                            @Override
+                            public void onFailure(Exception error) {
+                                Log.d("conversion", "Conversion Failed 1");
+                            }
+                        });
+                        File recorded = new File(date_string + "recorded.mp3");
+                        IConvertCallback callback = new IConvertCallback() {
+                            @Override
+                            public void onSuccess(File convertedFile) {
+                                Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_LONG).show();
+                            }
+                            @Override
+                            public void onFailure(Exception error) {
+                                Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_LONG).show();
+                            }
+                        };
+                        AndroidAudioConverter.with(MeasureActivity.this)
+                                .setFile(recorded)
+                                .setFormat(AudioFormat.WAV)
+                                .setCallback(callback)
+                                .convert();
                         Toast.makeText(getApplicationContext(), "Stopping Measurement",
                                 Toast.LENGTH_LONG).show();
 
