@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Environment;
+import android.os.FileObserver;
 import android.support.v4.app.ActivityCompat;
 import android.content.Context;
 import android.content.Intent;
@@ -53,6 +54,7 @@ public class MeasureActivity extends AppCompatActivity {
 
     MediaRecorder recorder;
     boolean isRecording = false;
+    MyFileObserver observer;
 
     SensorManager mSensorManager;
 
@@ -70,6 +72,8 @@ public class MeasureActivity extends AppCompatActivity {
 
     TextView description;
     boolean isMeasured;
+
+    boolean is_converted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +111,7 @@ public class MeasureActivity extends AppCompatActivity {
                     return;
                 }
 
+                observer.stopWatching();
                 sleep_time = end_time - start_time;
                 intent.putExtra("date_string", date_string);
                 intent.putExtra("sleep_time", sleep_time);
@@ -152,6 +157,10 @@ public class MeasureActivity extends AppCompatActivity {
                             Log.d("Record_Failed", "Start_Record_Failed");
                         }
 
+                        // Watching recorder to finish writing the file
+                        observer = new MyFileObserver(date_string + "recorded.mp3", FileObserver.CLOSE_WRITE);
+                        observer.startWatching();
+
                         Toast.makeText(getApplicationContext(), "Starting Measurement", Toast.LENGTH_LONG).show();
                         mSensorManager.registerListener(mLightListener, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
                         mSensorManager.registerListener(mAccListener, mAccSensor, SensorManager.SENSOR_DELAY_NORMAL);
@@ -196,32 +205,6 @@ public class MeasureActivity extends AppCompatActivity {
 
                         isMeasured = true;
 
-                        // mp3 to wav
-                        AndroidAudioConverter.load(MeasureActivity.this, new ILoadCallback() {
-                            @Override
-                            public void onSuccess() {
-                            }
-                            @Override
-                            public void onFailure(Exception error) {
-                                Log.d("conversion", "Conversion Failed 1");
-                            }
-                        });
-                        File recorded = new File(date_string + "recorded.mp3");
-                        IConvertCallback callback = new IConvertCallback() {
-                            @Override
-                            public void onSuccess(File convertedFile) {
-                                Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_LONG).show();
-                            }
-                            @Override
-                            public void onFailure(Exception error) {
-                                Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_LONG).show();
-                            }
-                        };
-                        AndroidAudioConverter.with(MeasureActivity.this)
-                                .setFile(recorded)
-                                .setFormat(AudioFormat.WAV)
-                                .setCallback(callback)
-                                .convert();
                         Toast.makeText(getApplicationContext(), "Stopping Measurement",
                                 Toast.LENGTH_LONG).show();
 
@@ -282,4 +265,44 @@ public class MeasureActivity extends AppCompatActivity {
             } catch (IOException e) {}
         }
     }
+
+    private class MyFileObserver extends FileObserver {
+
+        public MyFileObserver(String path, int mask) {
+            super(path, mask);
+        }
+
+        public void onEvent(int event, String path) {
+            // mp3 to wav
+            AndroidAudioConverter.load(MeasureActivity.this, new ILoadCallback() {
+                @Override
+                public void onSuccess() {
+                }
+
+                @Override
+                public void onFailure(Exception error) {
+                    Log.d("conversion", "Conversion Failed 1");
+                }
+            });
+            File recorded = new File(date_string + "recorded.mp3");
+            IConvertCallback callback = new IConvertCallback() {
+                @Override
+                public void onSuccess(File convertedFile) {
+                    Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_LONG).show();
+                    is_converted = true;
+                }
+
+                @Override
+                public void onFailure(Exception error) {
+                    Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_LONG).show();
+                }
+            };
+            AndroidAudioConverter.with(MeasureActivity.this)
+                    .setFile(recorded)
+                    .setFormat(AudioFormat.WAV)
+                    .setCallback(callback)
+                    .convert();
+        }
+    }
+
 }
