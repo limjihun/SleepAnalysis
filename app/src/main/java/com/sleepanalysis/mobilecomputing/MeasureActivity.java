@@ -33,6 +33,8 @@ import java.util.Locale;
 import com.github.mikephil.charting.data.Entry;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
 import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
@@ -45,15 +47,17 @@ public class MeasureActivity extends AppCompatActivity {
     final static int END = 1;
 
     int status = START;
-    long start_time, end_time, sleep_time, current_time = 0L;
-    Date date;
+    long start_time, end_time, sleep_time, current_time, record_start_time = 0L;
+    Date date, time;
     String date_string;
-    SimpleDateFormat date_format;
+    String time_string;
+    SimpleDateFormat date_format, time_format;
     FileOutputStream acc_fos;
     FileOutputStream light_fos;
 
     MediaRecorder recorder;
     boolean isRecording = false;
+    Timer timer;
     MyFileObserver observer;
 
     SensorManager mSensorManager;
@@ -72,8 +76,6 @@ public class MeasureActivity extends AppCompatActivity {
 
     TextView description;
     boolean isMeasured;
-
-    boolean is_converted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,7 +113,6 @@ public class MeasureActivity extends AppCompatActivity {
                     return;
                 }
 
-                observer.stopWatching();
                 sleep_time = end_time - start_time;
                 intent.putExtra("date_string", date_string);
                 intent.putExtra("sleep_time", sleep_time);
@@ -143,23 +144,68 @@ public class MeasureActivity extends AppCompatActivity {
                         button_start.setText(getText(R.string.end));
                         start_time = System.currentTimeMillis();
 
-                        // recording
+                        // recording every minutes by scheduling
                         recorder = new MediaRecorder();
-                        try{
-                            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-                            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-                            recorder.setOutputFile(date_string + "recorded.mp3");
-                            recorder.prepare();
-                            recorder.start();
-                            isRecording = true;
-                        } catch (IOException e){
-                            Log.d("Record_Failed", "Start_Record_Failed");
-                        }
+                        timer = new Timer();
+                        timer.schedule(new TimerTask(){
+                            @Override
+                            public void run() {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (!isRecording) {
+                                            record_start_time = System.currentTimeMillis();
+                                            time = new Date(record_start_time);
+                                            time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
+                                            time_string = date_string +  time_format.format(time) + ".mp3";
+                                            Log.d("before_Rec", "before");
 
-                        // Watching recorder to finish writing the file
-                        observer = new MyFileObserver(date_string + "recorded.mp3", FileObserver.CLOSE_WRITE);
-                        observer.startWatching();
+                                            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                                            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                                            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+                                            recorder.setOutputFile(time_string);
+                                            try {
+                                                recorder.prepare();
+                                            } catch (IOException e) {
+                                                Log.d("Record_Failed", "Start_Record_Failed in runOnUiThread : If");
+                                            }
+                                            recorder.start();
+                                            isRecording = true;
+                                            Log.d("after_Rec", "after");
+
+                                            // Watching recorder to finish writing the file
+                                            observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            observer.startWatching();
+                                        } else {
+                                            // stop recording
+//                                            recorder.stop();
+                                            recorder.reset();
+//                                            observer.stopWatching();
+
+                                            record_start_time = System.currentTimeMillis();
+                                            time = new Date(record_start_time);
+                                            time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
+                                            time_string = date_string +  time_format.format(time) + ".mp3";
+
+                                            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                                            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                                            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+                                            recorder.setOutputFile(time_string);
+                                            try {
+                                                recorder.prepare();
+                                            } catch (IOException e) {
+                                                Log.d("Record_Failed", "Start_Record_Failed in runOnUiThread : Else");
+                                            }
+                                            recorder.start();
+
+                                            // Watching recorder to finish writing the file
+                                            observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            observer.startWatching();
+                                        }
+                                    }
+                                });
+                            }
+                        }, 0, 10000);
 
                         Toast.makeText(getApplicationContext(), "Starting Measurement", Toast.LENGTH_LONG).show();
                         mSensorManager.registerListener(mLightListener, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
@@ -197,6 +243,7 @@ public class MeasureActivity extends AppCompatActivity {
                         Log.d("is Recording? ", String.valueOf(isRecording));
 
                         if (isRecording) {
+                            timer.cancel();
                             recorder.stop();
                             recorder.release();
                             recorder = null;
@@ -284,12 +331,11 @@ public class MeasureActivity extends AppCompatActivity {
                     Log.d("conversion", "Conversion Failed 1");
                 }
             });
-            File recorded = new File(date_string + "recorded.mp3");
+            File recorded = new File(path);
             IConvertCallback callback = new IConvertCallback() {
                 @Override
                 public void onSuccess(File convertedFile) {
                     Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_LONG).show();
-                    is_converted = true;
                 }
 
                 @Override
@@ -302,6 +348,7 @@ public class MeasureActivity extends AppCompatActivity {
                     .setFormat(AudioFormat.WAV)
                     .setCallback(callback)
                     .convert();
+            this.stopWatching();
         }
     }
 

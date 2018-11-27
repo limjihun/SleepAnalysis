@@ -26,6 +26,7 @@ import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -230,130 +231,133 @@ public class ResultActivity extends AppCompatActivity {
         });
         dispatcher.run();
 
-        try {
-            File mfcc_file = new File(date_string + "recorded.arff");
-            FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
-            String arff_info = "@relation snore\n" +
-                    "\n" +
-                    "@attribute mfcc01 real\n" +
-                    "@attribute mfcc02 real\n" +
-                    "@attribute mfcc03 real\n" +
-                    "@attribute mfcc04 real\n" +
-                    "@attribute mfcc05 real\n" +
-                    "@attribute mfcc06 real\n" +
-                    "@attribute mfcc07 real\n" +
-                    "@attribute mfcc08 real\n" +
-                    "@attribute mfcc09 real\n" +
-                    "@attribute mfcc10 real\n" +
-                    "@attribute mfcc11 real\n" +
-                    "@attribute mfcc12 real\n" +
-                    "@attribute mfcc13 real\n" +
-                    "@attribute mfcc14 real\n" +
-                    "@attribute mfcc15 real\n" +
-                    "@attribute mfcc16 real\n" +
-                    "@attribute mfcc17 real\n" +
-                    "@attribute mfcc18 real\n" +
-                    "@attribute mfcc19 real\n" +
-                    "@attribute mfcc20 real\n" +
-                    "@attribute is_snore {yes, no}\n" +
-                    "\n" +
-                    "@data\n";
-            mfcc_fos.write(arff_info.getBytes());
-            for (int i = 0; i < mfccList.size(); i++) {
-                mfcc_fos.write((Arrays.toString(mfccList.get(i)) + ", ?\n")
-                        .replace("[", "")
-                        .replace("]", "")
-                        .getBytes());
-            }
-            mfcc_fos.close();
-            Toast.makeText(getApplicationContext(), "MFCC Extracted", Toast.LENGTH_LONG).show();
-        } catch (IOException e) {}
+        // for recorded.arff
+//        try {
+//            File mfcc_file = new File(date_string + "recorded.arff");
+//            FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
+//            String arff_info = "@relation snore\n" +
+//                    "\n" +
+//                    "@attribute mfcc01 real\n" +
+//                    "@attribute mfcc02 real\n" +
+//                    "@attribute mfcc03 real\n" +
+//                    "@attribute mfcc04 real\n" +
+//                    "@attribute mfcc05 real\n" +
+//                    "@attribute mfcc06 real\n" +
+//                    "@attribute mfcc07 real\n" +
+//                    "@attribute mfcc08 real\n" +
+//                    "@attribute mfcc09 real\n" +
+//                    "@attribute mfcc10 real\n" +
+//                    "@attribute mfcc11 real\n" +
+//                    "@attribute mfcc12 real\n" +
+//                    "@attribute mfcc13 real\n" +
+//                    "@attribute mfcc14 real\n" +
+//                    "@attribute mfcc15 real\n" +
+//                    "@attribute mfcc16 real\n" +
+//                    "@attribute mfcc17 real\n" +
+//                    "@attribute mfcc18 real\n" +
+//                    "@attribute mfcc19 real\n" +
+//                    "@attribute mfcc20 real\n" +
+//                    "@attribute is_snore {yes, no}\n" +
+//                    "\n" +
+//                    "@data\n";
+//            mfcc_fos.write(arff_info.getBytes());
+//            for (int i = 0; i < mfccList.size(); i++) {
+//                mfcc_fos.write((Arrays.toString(mfccList.get(i)) + ", ?\n")
+//                        .replace("[", "")
+//                        .replace("]", "")
+//                        .getBytes());
+//            }
+//            mfcc_fos.close();
+//            Toast.makeText(getApplicationContext(), "MFCC Extracted", Toast.LENGTH_LONG).show();
+//        } catch (IOException e) {}
 
 
-        // For Decision Tree Modeling!
-        /*try {
-            File mfcc_file = new File(date_string + "non_snoring_android.arff");
-            FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
-            String arff_info = "@relation snore\n" +
-                    "\n" +
-                    "@attribute mfcc01 real\n" +
-                    "@attribute mfcc02 real\n" +
-                    "@attribute mfcc03 real\n" +
-                    "@attribute mfcc04 real\n" +
-                    "@attribute mfcc05 real\n" +
-                    "@attribute mfcc06 real\n" +
-                    "@attribute mfcc07 real\n" +
-                    "@attribute mfcc08 real\n" +
-                    "@attribute mfcc09 real\n" +
-                    "@attribute mfcc10 real\n" +
-                    "@attribute mfcc11 real\n" +
-                    "@attribute mfcc12 real\n" +
-                    "@attribute mfcc13 real\n" +
-                    "@attribute mfcc14 real\n" +
-                    "@attribute mfcc15 real\n" +
-                    "@attribute mfcc16 real\n" +
-                    "@attribute mfcc17 real\n" +
-                    "@attribute mfcc18 real\n" +
-                    "@attribute mfcc19 real\n" +
-                    "@attribute mfcc20 real\n" +
-                    "@attribute is_snore {yes, no}\n" +
-                    "\n" +
-                    "@data\n";
-            mfcc_fos.write(arff_info.getBytes());
+        // For analyzing multiple sounds
+//        for (int k = 1; k < 41; k++) {
+//            try {
+//                File mfcc_file = new File(date_string + "non_snoring_android (" + String.valueOf(k) + ").arff");
+//                FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
+//                String arff_info = "@relation snore\n" +
+//                        "\n" +
+//                        "@attribute mfcc01 real\n" +
+//                        "@attribute mfcc02 real\n" +
+//                        "@attribute mfcc03 real\n" +
+//                        "@attribute mfcc04 real\n" +
+//                        "@attribute mfcc05 real\n" +
+//                        "@attribute mfcc06 real\n" +
+//                        "@attribute mfcc07 real\n" +
+//                        "@attribute mfcc08 real\n" +
+//                        "@attribute mfcc09 real\n" +
+//                        "@attribute mfcc10 real\n" +
+//                        "@attribute mfcc11 real\n" +
+//                        "@attribute mfcc12 real\n" +
+//                        "@attribute mfcc13 real\n" +
+//                        "@attribute mfcc14 real\n" +
+//                        "@attribute mfcc15 real\n" +
+//                        "@attribute mfcc16 real\n" +
+//                        "@attribute mfcc17 real\n" +
+//                        "@attribute mfcc18 real\n" +
+//                        "@attribute mfcc19 real\n" +
+//                        "@attribute mfcc20 real\n" +
+//                        "@attribute is_snore {yes, no}\n" +
+//                        "\n" +
+//                        "@data\n";
+//                mfcc_fos.write(arff_info.getBytes());
+//
+////            for(int i = 1; i < 41; i++){
+//                path = date_string + "test/s (" + String.valueOf(k) + ").wav";
+//                //new AndroidFFMPEGLocator(this);
+//                final List<float[]> mfccList1 = new ArrayList<>(200);
+//                dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
+//                final MFCC mfcc1 = new MFCC(bufferSize, sampleRate, 20, 50, 0, 20000);
+//                dispatcher.addAudioProcessor(mfcc1);
+//                dispatcher.addAudioProcessor(new AudioProcessor() {
+//
+//                    @Override
+//                    public void processingFinished() {
+//                    }
+//
+//                    @Override
+//                    public boolean process(AudioEvent audioEvent) {
+//                        mfccList1.add(mfcc1.getMFCC());
+//                        return true;
+//                    }
+//                });
+//                dispatcher.run();
+//
+//                for (int j = 0; j < mfccList1.size(); j++) {
+//                    mfcc_fos.write(
+//                            (Arrays.toString(mfccList1.get(j)) + ", ?\n")
+//                                    .replace("[", "")
+//                                    .replace("]", "")
+//                                    .getBytes()
+//                    );
+////                }
+//                Log.d("mfcc_complete", String.valueOf(k));
+//            }
+//            mfcc_fos.close();
+//            } catch (IOException e) {
+//                Log.d("mfccList", "first");}
+//        }
 
-            for(int i=1;i<201;i++){
-                path = date_string + "non_snoring/non_snoring (" + String.valueOf(i) + ").wav";
-                //new AndroidFFMPEGLocator(this);
-                final List<float[]> mfccList1 = new ArrayList<>(200);
-                dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
-                final MFCC mfcc1 = new MFCC(bufferSize, sampleRate, 20, 50, 0, 20000);
-                dispatcher.addAudioProcessor(mfcc1);
-                dispatcher.addAudioProcessor(new AudioProcessor() {
 
-                    @Override
-                    public void processingFinished() {
-                    }
-
-                    @Override
-                    public boolean process(AudioEvent audioEvent) {
-                        mfccList1.add(mfcc1.getMFCC());
-                        return true;
-                    }
-                });
-                dispatcher.run();
-
-                for (int j = 0; j < mfccList1.size(); j++) {
-                    mfcc_fos.write(
-                            (Arrays.toString(mfccList1.get(j)) + ", no\n")
-                                    .replace("[", "")
-                                    .replace("]", "")
-                                    .getBytes()
-                    );
-                }
-                Log.d("mfcc_complete", String.valueOf(i));
-            }
-            mfcc_fos.close();
-        } catch (IOException e) {
-            Log.d("mfccList", "first");}
-            */
-      
         // Weka generated code
-        WekaWrapper wrapper = new WekaWrapper();
-        int count = 0;
-        int numInstances = 0;
-        try {
-            // test data
-            Instances data = new Instances(new BufferedReader(new InputStreamReader(getResources().openRawResource(R.raw.snoring_test_android2))));
-            // set snore Yes or No index
-            data.setClassIndex(data.numAttributes()-1);
-            numInstances = data.numInstances();
-            for (int i=0; i<numInstances; i++) {
-                double result = wrapper.classifyInstance(data.instance(i));
-
-                Log.d("Weka Result", data.classAttribute().value((int)result));
-                if (data.classAttribute().value((int)result).equals("yes")) {
-                    count++;
-                }
+//        WekaWrapper wrapper = new WekaWrapper();
+//        int count = 0;
+//        int numInstances = 0;
+//        try {
+//            // test data
+//            Instances data = new Instances(new BufferedReader(new InputStreamReader(new FileInputStream(date_string + "recorded.arff"))));
+//            // set snore Yes or No index
+//            data.setClassIndex(data.numAttributes()-1);
+//            numInstances = data.numInstances();
+//            for (int i=0; i<numInstances; i++) {
+//                double result = wrapper.classifyInstance(data.instance(i));
+//
+//                Log.d("Weka Result", data.classAttribute().value((int)result));
+//                if (data.classAttribute().value((int)result).equals("yes")) {
+//                    count++;
+//                }
 //                Log.d("Weka Result2", data.instance(i).toString());
 //                String instance = data.instance(i).toString();
 //                String[] temp = instance.split(",");
@@ -363,11 +367,46 @@ public class ResultActivity extends AppCompatActivity {
 //                if(data.classAttribute().value((int)result).equals(correctData)) {
 //                    count++;
 //                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Log.d("Weka Result", "snore : " + String.valueOf(count * 100 / numInstances) + "%");
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        Log.d("Weka Result", "snore : " + String.valueOf(count * 100 / numInstances) + "%");
+
+        // for analyzing multiple arff
+//        for (int j = 1; j < 41; j++) {
+//            WekaWrapper wrapper = new WekaWrapper();
+//            int count = 0;
+//            int numInstances = 0;
+//            try {
+//                // test data
+////                Log.d("Weka Result", date_string + "non_snoring_android (" + String.valueOf(j) + ").arff");
+//                Instances data = new Instances(new BufferedReader(new InputStreamReader(new FileInputStream(date_string + "non_snoring_android (" + String.valueOf(j) + ").arff"))));
+//                // set snore Yes or No index
+//                data.setClassIndex(data.numAttributes()-1);
+//                numInstances = data.numInstances();
+//                for (int i=0; i<numInstances; i++) {
+//                    double result = wrapper.classifyInstance(data.instance(i));
+//
+////                    Log.d("Weka Result", data.classAttribute().value((int)result));
+//                    if (data.classAttribute().value((int)result).equals("yes")) {
+//                        count++;
+//                    }
+////                Log.d("Weka Result2", data.instance(i).toString());
+////                String instance = data.instance(i).toString();
+////                String[] temp = instance.split(",");
+////                String correctData = temp[temp.length-1];
+////                Log.d("Weka Result3", correctData);
+//
+////                if(data.classAttribute().value((int)result).equals(correctData)) {
+////                    count++;
+////                }
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//            Log.d("Weka Result", "test " + String.valueOf(j) + " : " + String.valueOf(count * 100 / numInstances) + "%");
+//        }
     }
 }
 
