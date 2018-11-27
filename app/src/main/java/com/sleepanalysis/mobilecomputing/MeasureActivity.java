@@ -58,7 +58,7 @@ public class MeasureActivity extends AppCompatActivity {
     MediaRecorder recorder;
     boolean isRecording = false;
     Timer timer;
-    MyFileObserver observer;
+//    MyFileObserver observer;
 
     SensorManager mSensorManager;
 
@@ -174,7 +174,7 @@ public class MeasureActivity extends AppCompatActivity {
                                             Log.d("after_Rec", "after");
 
                                             // Watching recorder to finish writing the file
-                                            observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            MyFileObserver observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             observer.startWatching();
                                         } else {
                                             // stop recording
@@ -199,7 +199,7 @@ public class MeasureActivity extends AppCompatActivity {
                                             recorder.start();
 
                                             // Watching recorder to finish writing the file
-                                            observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            MyFileObserver observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             observer.startWatching();
                                         }
                                     }
@@ -314,12 +314,15 @@ public class MeasureActivity extends AppCompatActivity {
     }
 
     private class MyFileObserver extends FileObserver {
+        private String path;
 
         public MyFileObserver(String path, int mask) {
             super(path, mask);
+            this.path = path;
         }
 
         public void onEvent(int event, String path) {
+            Log.d("옵져버", "옵져버 실행: " + this.path);
             // mp3 to wav
             AndroidAudioConverter.load(MeasureActivity.this, new ILoadCallback() {
                 @Override
@@ -331,7 +334,7 @@ public class MeasureActivity extends AppCompatActivity {
                     Log.d("conversion", "Conversion Failed 1");
                 }
             });
-            File recorded = new File(path);
+            File recorded = new File(this.path);
             IConvertCallback callback = new IConvertCallback() {
                 @Override
                 public void onSuccess(File convertedFile) {
