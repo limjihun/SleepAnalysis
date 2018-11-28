@@ -47,10 +47,9 @@ public class MeasureActivity extends AppCompatActivity {
     final static int END = 1;
 
     int status = START;
-    long start_time, end_time, sleep_time, current_time, record_start_time = 0L;
+    long start_time, end_time, sleep_time, current_time, record_start_time= 0L;
     Date date, time;
-    String date_string;
-    String time_string;
+    String date_string, time_string;
     SimpleDateFormat date_format, time_format;
     FileOutputStream acc_fos;
     FileOutputStream light_fos;
@@ -88,6 +87,14 @@ public class MeasureActivity extends AppCompatActivity {
         date_format = new SimpleDateFormat("yyyy-MM-dd", Locale.KOREAN);
         date_string = Environment.getExternalStorageDirectory().getAbsolutePath() + "/SleepAnalysis/" + date_format.format(date) + "/";
         File folder = new File(date_string);
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        folder = new File(date_string + "recorded/");
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        folder = new File(date_string + "arff/");
         if (!folder.exists()) {
             folder.mkdirs();
         }
@@ -157,7 +164,7 @@ public class MeasureActivity extends AppCompatActivity {
                                             record_start_time = System.currentTimeMillis();
                                             time = new Date(record_start_time);
                                             time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
-                                            time_string = date_string +  time_format.format(time) + ".mp3";
+                                            time_string = date_string + "recorded/" + time_format.format(time) + ".mp3";
 
                                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                                             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -183,7 +190,7 @@ public class MeasureActivity extends AppCompatActivity {
                                             record_start_time = System.currentTimeMillis();
                                             time = new Date(record_start_time);
                                             time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
-                                            time_string = date_string +  time_format.format(time) + ".mp3";
+                                            time_string = date_string + "recorded/" + time_format.format(time) + ".mp3";
 
                                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                                             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
