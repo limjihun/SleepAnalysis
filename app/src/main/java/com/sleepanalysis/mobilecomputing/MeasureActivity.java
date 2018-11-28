@@ -158,7 +158,6 @@ public class MeasureActivity extends AppCompatActivity {
                                             time = new Date(record_start_time);
                                             time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
                                             time_string = date_string +  time_format.format(time) + ".mp3";
-                                            Log.d("before_Rec", "before");
 
                                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                                             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -171,7 +170,6 @@ public class MeasureActivity extends AppCompatActivity {
                                             }
                                             recorder.start();
                                             isRecording = true;
-                                            Log.d("after_Rec", "after");
 
                                             // Watching recorder to finish writing the file
                                             MyFileObserver observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
