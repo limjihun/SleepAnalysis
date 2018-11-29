@@ -57,7 +57,7 @@ public class MeasureActivity extends AppCompatActivity {
     MediaRecorder recorder;
     boolean isRecording = false;
     Timer timer;
-//    MyFileObserver observer;
+    MyFileObserver observer;
 
     SensorManager mSensorManager;
 
@@ -166,6 +166,12 @@ public class MeasureActivity extends AppCompatActivity {
                                             time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
                                             time_string = date_string + "recorded/" + time_format.format(time) + ".mp3";
 
+                                            try {
+                                                File mp3_file = new File(time_string);
+                                                mp3_file.createNewFile();
+                                            } catch (IOException e) {
+                                            }
+
                                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                                             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
                                             recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
@@ -179,18 +185,21 @@ public class MeasureActivity extends AppCompatActivity {
                                             isRecording = true;
 
                                             // Watching recorder to finish writing the file
-                                            MyFileObserver observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             observer.startWatching();
                                         } else {
-                                            // stop recording
-//                                            recorder.stop();
                                             recorder.reset();
-//                                            observer.stopWatching();
 
                                             record_start_time = System.currentTimeMillis();
                                             time = new Date(record_start_time);
                                             time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
                                             time_string = date_string + "recorded/" + time_format.format(time) + ".mp3";
+
+                                            try {
+                                                File mp3_file = new File(time_string);
+                                                mp3_file.createNewFile();
+                                            } catch (IOException e) {
+                                            }
 
                                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                                             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
@@ -204,7 +213,7 @@ public class MeasureActivity extends AppCompatActivity {
                                             recorder.start();
 
                                             // Watching recorder to finish writing the file
-                                            MyFileObserver observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            observer = new MyFileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             observer.startWatching();
                                         }
                                     }
@@ -336,19 +345,20 @@ public class MeasureActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Exception error) {
-                    Log.d("conversion", "Conversion Failed 1");
+                    Log.d("wav conversion", "Callback Failed");
                 }
             });
             File recorded = new File(this.path);
             IConvertCallback callback = new IConvertCallback() {
                 @Override
                 public void onSuccess(File convertedFile) {
-                    Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_LONG).show();
+//                    Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_SHORT).show();
                 }
 
                 @Override
                 public void onFailure(Exception error) {
-                    Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_LONG).show();
+//                    Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_SHORT).show();
+                    Log.d("wav conversion", "Conversion Failed");
                 }
             };
             AndroidAudioConverter.with(MeasureActivity.this)
