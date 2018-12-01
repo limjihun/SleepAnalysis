@@ -244,7 +244,10 @@ public class MeasureActivity extends AppCompatActivity {
             date = new Date(current_time);
             date_format = new SimpleDateFormat("hh:mm:ss", Locale.KOREAN);
 
-            String data = " " + String.format("%.4f", accX) + " " + String.format("%.4f", accY) + " " + String.format("%.4f", accZ) + "\n";
+            String data = " " + String.format("%.4f", accX)
+                    + " " + String.format("%.4f", accY)
+                    + " " + String.format("%.4f", accZ)
+                    + " " + String.format("%.4f", Math.sqrt(accX*accX + accY*accY + accZ*accZ))+ "\n";
             try {
                 acc_fos.write(date_format.format(date).getBytes());
                 acc_fos.write(data.getBytes());
