@@ -115,6 +115,8 @@ public class ResultActivity extends AppCompatActivity {
         XAxis x_axis_light = chart_light.getXAxis();
         x_axis_light.setPosition(XAxis.XAxisPosition.BOTTOM);
         x_axis_light.setDrawGridLines(true);
+        x_axis_light.setGranularity(1f); // https://stackoverflow.com/questions/40803233/mpandroidchart-x-axis-date-time-label-formatting
+        //https://github.com/PhilJay/MPAndroidChart/issues/133
         x_axis_light.setTextSize(1);
         x_axis_light.setValueFormatter(new IAxisValueFormatter() {
             @Override
@@ -169,93 +171,94 @@ public class ResultActivity extends AppCompatActivity {
         chart_light.animateXY(2000, 2000);
         chart_light.invalidate();
 
-        File recorded_file = new File(date_string + "recorded/");
-        String[] wav_list = recorded_file.list(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".wav");
-            }
-        });
-
-        for (String st : wav_list) {
-            Log.d("wav_list", st);
-        }
 
         // For analyzing multiple sounds
-        String path;
-        AudioDispatcher dispatcher;
-        int sampleRate = 22050;
-        int bufferSize = 1024;
-        int bufferOverlap = 128;
-        new AndroidFFMPEGLocator(this);
+//        File recorded_file = new File(date_string + "recorded/");
+//        String[] wav_list = recorded_file.list(new FilenameFilter() {
+//            @Override
+//            public boolean accept(File dir, String name) {
+//                return name.endsWith(".wav");
+//            }
+//        });
+//
+//        for (String st : wav_list) {
+//            Log.d("wav_list", st);
+//        }
 
-        for (int i = 0; i < wav_list.length; i++) {
-            try {
-                File mfcc_file = new File(date_string + "arff/" + wav_list[i] + ".arff");
-                FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
-                String arff_info = "@relation snore\n" +
-                        "\n" +
-                        "@attribute mfcc01 real\n" +
-                        "@attribute mfcc02 real\n" +
-                        "@attribute mfcc03 real\n" +
-                        "@attribute mfcc04 real\n" +
-                        "@attribute mfcc05 real\n" +
-                        "@attribute mfcc06 real\n" +
-                        "@attribute mfcc07 real\n" +
-                        "@attribute mfcc08 real\n" +
-                        "@attribute mfcc09 real\n" +
-                        "@attribute mfcc10 real\n" +
-                        "@attribute mfcc11 real\n" +
-                        "@attribute mfcc12 real\n" +
-                        "@attribute mfcc13 real\n" +
-                        "@attribute mfcc14 real\n" +
-                        "@attribute mfcc15 real\n" +
-                        "@attribute mfcc16 real\n" +
-                        "@attribute mfcc17 real\n" +
-                        "@attribute mfcc18 real\n" +
-                        "@attribute mfcc19 real\n" +
-                        "@attribute mfcc20 real\n" +
-                        "@attribute is_snore {yes, no}\n" +
-                        "\n" +
-                        "@data\n";
-                mfcc_fos.write(arff_info.getBytes());
+//        String recorded_path;
+//        AudioDispatcher dispatcher;
+//        int sampleRate = 22050;
+//        int bufferSize = 1024;
+//        int bufferOverlap = 128;
+//        new AndroidFFMPEGLocator(this);
+//
+//        for (int i = 0; i < wav_list.length; i++) {
+//            try {
+//                File mfcc_file = new File(date_string + "arff/" + wav_list[i] + ".arff");
+//                FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
+//                String arff_info = "@relation snore\n" +
+//                        "\n" +
+//                        "@attribute mfcc01 real\n" +
+//                        "@attribute mfcc02 real\n" +
+//                        "@attribute mfcc03 real\n" +
+//                        "@attribute mfcc04 real\n" +
+//                        "@attribute mfcc05 real\n" +
+//                        "@attribute mfcc06 real\n" +
+//                        "@attribute mfcc07 real\n" +
+//                        "@attribute mfcc08 real\n" +
+//                        "@attribute mfcc09 real\n" +
+//                        "@attribute mfcc10 real\n" +
+//                        "@attribute mfcc11 real\n" +
+//                        "@attribute mfcc12 real\n" +
+//                        "@attribute mfcc13 real\n" +
+//                        "@attribute mfcc14 real\n" +
+//                        "@attribute mfcc15 real\n" +
+//                        "@attribute mfcc16 real\n" +
+//                        "@attribute mfcc17 real\n" +
+//                        "@attribute mfcc18 real\n" +
+//                        "@attribute mfcc19 real\n" +
+//                        "@attribute mfcc20 real\n" +
+//                        "@attribute is_snore {yes, no}\n" +
+//                        "\n" +
+//                        "@data\n";
+//                mfcc_fos.write(arff_info.getBytes());
+//
+//                recorded_path = date_string + "recorded/" + wav_list[i];
+//                Log.d("path_list", recorded_path);
+//                //new AndroidFFMPEGLocator(this);
+//                final List<float[]> mfccList = new ArrayList<>(200);
+//                dispatcher = AudioDispatcherFactory.fromPipe(recorded_path, sampleRate, bufferSize, bufferOverlap);
+//                final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 0, 20000);
+//                dispatcher.addAudioProcessor(mfcc);
+//                dispatcher.addAudioProcessor(new AudioProcessor() {
+//
+//                    @Override
+//                    public void processingFinished() {
+//                    }
+//
+//                    @Override
+//                    public boolean process(AudioEvent audioEvent) {
+//                        mfccList.add(mfcc.getMFCC());
+//                        return true;
+//                    }
+//                });
+//                dispatcher.run();
+//
+//                for (int j = 0; j < mfccList.size(); j++) {
+//                    mfcc_fos.write((Arrays.toString(mfccList.get(j)) + ", ?\n")
+//                                    .replace("[", "")
+//                                    .replace("]", "")
+//                                    .getBytes()
+//                    );
+//                }
+//                Log.d("mfcc_complete", String.valueOf(i));
+//                mfcc_fos.close();
+//            } catch (IOException e) {
+//                Log.d("mfccList", "first");}
+//        }
 
-                path = date_string + "recorded/" + wav_list[i];
-                Log.d("path_list", path);
-                //new AndroidFFMPEGLocator(this);
-                final List<float[]> mfccList = new ArrayList<>(200);
-                dispatcher = AudioDispatcherFactory.fromPipe(path, sampleRate, bufferSize, bufferOverlap);
-                final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 0, 20000);
-                dispatcher.addAudioProcessor(mfcc);
-                dispatcher.addAudioProcessor(new AudioProcessor() {
 
-                    @Override
-                    public void processingFinished() {
-                    }
-
-                    @Override
-                    public boolean process(AudioEvent audioEvent) {
-                        mfccList.add(mfcc.getMFCC());
-                        return true;
-                    }
-                });
-                dispatcher.run();
-
-                for (int j = 0; j < mfccList.size(); j++) {
-                    mfcc_fos.write((Arrays.toString(mfccList.get(j)) + ", ?\n")
-                                    .replace("[", "")
-                                    .replace("]", "")
-                                    .getBytes()
-                    );
-                }
-                Log.d("mfcc_complete", String.valueOf(i));
-                mfcc_fos.close();
-            } catch (IOException e) {
-                Log.d("mfccList", "first");}
-        }
-
-
-        // for analyzing multiple arff
+        /*// for analyzing multiple arff
         for (int j = 1; j < wav_list.length; j++) {
             WekaWrapper wrapper = new WekaWrapper();
             int count = 0;
@@ -290,7 +293,7 @@ public class ResultActivity extends AppCompatActivity {
             if (numInstances != 0) {
                 Log.d("Weka Result", "test " + String.valueOf(j) + " : " + String.valueOf(count * 100 / numInstances) + "%");
             }
-        }
+        }*/
     }
 }
 
