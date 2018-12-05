@@ -124,14 +124,16 @@ public class MeasureActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MeasureActivity.this, ResultActivity.class);
 
-                if (!isMeasured) {
-                    Toast.makeText(getApplicationContext(), "Please measure first", Toast.LENGTH_LONG).show();
-                    return;
-                }
+//                if (!isMeasured) {
+//                    Toast.makeText(getApplicationContext(), "Please measure first", Toast.LENGTH_LONG).show();
+//                    return;
+//                }
 
                 sleep_time = end_time - start_time;
                 intent.putExtra("date_string", date_string);
                 intent.putExtra("sleep_time", sleep_time);
+                intent.putExtra("start_time", start_time);
+                intent.putExtra("end_time", end_time);
                 Log.d("Sleep time : ", String.valueOf(sleep_time));
                 startActivity(intent);
             }
@@ -344,9 +346,12 @@ public class MeasureActivity extends AppCompatActivity {
             date = new Date(current_time);
             date_format = new SimpleDateFormat("hh:mm:ss", Locale.KOREAN);
 
-            String data = " " + String.format("%.4f", accX) + " " + String.format("%.4f", accY) + " " + String.format("%.4f", accZ) + "\n";
+            String data = " " + String.format("%.4f", accX)
+                    + " " + String.format("%.4f", accY)
+                    + " " + String.format("%.4f", accZ)
+                    + " " + String.format("%.4f", Math.sqrt(accX*accX + accY*accY))+ "\n";
             try {
-                acc_fos.write(date_format.format(date).getBytes());
+                acc_fos.write(String.valueOf(current_time).getBytes());
                 acc_fos.write(data.getBytes());
             } catch (IOException e) {}
         }

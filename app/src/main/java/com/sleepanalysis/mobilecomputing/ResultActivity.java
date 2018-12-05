@@ -4,7 +4,6 @@ import android.content.Intent;
 
 import android.content.res.AssetManager;
 import android.graphics.Color;
-import android.icu.text.SimpleDateFormat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,7 +30,9 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -47,6 +48,7 @@ import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
 import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
 import cafe.adriel.androidaudioconverter.callback.ILoadCallback;
 import cafe.adriel.androidaudioconverter.model.AudioFormat;
+import java.util.Locale;
 
 import weka.core.Instances;
 
@@ -62,7 +64,10 @@ public class ResultActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         // sleep_time 받아와서 띄우기
-        int sleep_time = (int) intent.getExtras().getLong("sleep_time");
+        int sleep_time = (int)intent.getExtras().getLong("sleep_time");
+        long start_time = intent.getExtras().getLong("start_time");
+        long end_time = intent.getExtras().getLong("end_time");
+      
         int h, m, s;
         h = sleep_time / (1000 * 60 * 60);
         m = (sleep_time / (1000 * 60)) % 60;
@@ -80,96 +85,95 @@ public class ResultActivity extends AppCompatActivity {
             }
         });
 
-        // Birghtness Graph Load
-        FileReader light_fr;
-        BufferedReader light_br;
-        ArrayList<Entry> values_light = new ArrayList<Entry>();
+        // Acceleration Graph Load
+        FileReader acc_fr;
+        BufferedReader acc_br;
+        ArrayList<Entry> values_acc = new ArrayList<Entry>();
         String date_string = intent.getExtras().getString("date_string");
-        File light_file = new File(date_string + "light.txt");
+        File acc_file = new File(date_string + "acc.txt");
+//        try{
+//            InputStream in = getResources().openRawResource(R.raw.acc6);
+//
+//            if(in != null) {
+//                InputStreamReader stream = new InputStreamReader(in, "utf-8");
+//                BufferedReader buffer = new BufferedReader(stream);
+//
+//                String line;
+//                float x, y, max = 100, min = 0;
+//                int start_time2 = 33436; //(int)start_time/1000 % (24 * 60 * 60);
+//                Log.d("data", "start_time2 :" + start_time2);
+//                while ((line = buffer.readLine()) != null) {
+//                    String[] split = line.split(" ");
+//                    String[] hhmmss = split[0].split(":");
+//                    int sec = Integer.valueOf(hhmmss[0]) * 3600 + Integer.valueOf(hhmmss[1]) * 60 + Integer.valueOf(hhmmss[2]);
+//                    x = sec - start_time2;
+//                    // AM time
+//                    if (x < 0) x = x + 12 * 3600;
+//
+//                    // y = Float.valueOf(split[1]);
+//                    y = (max-min)/2*(float)Math.cos((x*Math.PI)/(45*60))+(max+min)/2;
+//
+//                    values_acc.add(new Entry(x, y));
+//                    Log.d("data", "sec : " + sec);
+//                    Log.d("data", x + ", " + y + ", " + x/(45*60));
+//                }
+//
+//                in.close();
+//            }
+
         try {
-            light_fr = new FileReader(light_file);
-            light_br = new BufferedReader(light_fr);
+            acc_fr = new FileReader(acc_file);
+            acc_br = new BufferedReader(acc_fr);
             String line;
-//            String d, v;
-            String dd;
-            int d;
-            float v;
-            while ((line = light_br.readLine()) != null) {
-                d = Integer.parseInt(line.substring(0, 8).replace(":", ""));
-                v = Float.parseFloat(line.substring(10));
-                values_light.add(new Entry(d, v));
+            int x;
+            float y, max = 100, min = 0;
+
+            while((line = acc_br.readLine()) != null){
+                String[] split = line.split(" ");
+                int sec =
+                x = (int)((Long.valueOf(split[0]) - start_time)/1000);
+                // AM time
+                if (x < 0) x = x + 12 * 3600;
+                y = (max-min)/2*(float)Math.cos((x*Math.PI)/(45*60))+(max+min)/2;
+
+                values_acc.add(new Entry(x, y));
+                Log.d("data", x + ", " + y);
             }
         } catch (IOException e) {
             Log.d("graph load error", "error in file");
         }
 
-        // Brightness Data Chart
-        LineChart chart_light = findViewById(R.id.brightness_chart);
-        chart_light.setDescription(null);
-        chart_light.setBackgroundColor(Color.parseColor("#EFEFFB"));
-        chart_light.getAxisRight().setEnabled(false);
-        chart_light.setScaleYEnabled(false);
-        chart_light.setDoubleTapToZoomEnabled(false);
+        // Acceleration Graph
+        LineChart chart_acc = findViewById(R.id.brightness_chart);
+        chart_acc.setDescription(null);
+        chart_acc.setBackgroundColor(Color.parseColor("#EFEFFB"));
+        chart_acc.getAxisRight().setEnabled(false);
+        chart_acc.setScaleYEnabled(false);
+        chart_acc.setDoubleTapToZoomEnabled(false);
 
-        // XAxis
-        XAxis x_axis_light = chart_light.getXAxis();
-        x_axis_light.setPosition(XAxis.XAxisPosition.BOTTOM);
-        x_axis_light.setDrawGridLines(true);
-        x_axis_light.setGranularity(1f); // https://stackoverflow.com/questions/40803233/mpandroidchart-x-axis-date-time-label-formatting
-        //https://github.com/PhilJay/MPAndroidChart/issues/133
-        x_axis_light.setTextSize(1);
-        x_axis_light.setValueFormatter(new IAxisValueFormatter() {
-            @Override
-            public String getFormattedValue(float value, AxisBase axis) {
-                SimpleDateFormat parse_format = new SimpleDateFormat("hhmmss");
-                SimpleDateFormat return_format = new SimpleDateFormat("hh:mm:ss");
+        XAxis x_axis_acc = chart_acc.getXAxis();
+        x_axis_acc.setPosition(XAxis.XAxisPosition.BOTTOM);
+        x_axis_acc.setDrawGridLines(true);
+        x_axis_acc.setTextSize(1);
 
-                Date date = null;
-                try {
-                    date = parse_format.parse(String.valueOf((int) value));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                Log.d("parameter_raw", String.valueOf(value));
-                Log.d("parameter_date", String.valueOf(date));
-
-                return return_format.format(date);
-            }
-        });
-
-        // YAxis
-        YAxis left_axis_light = chart_light.getAxisLeft();
-        left_axis_light.setDrawGridLines(true);
-        left_axis_light.setDrawAxisLine(true);
-        left_axis_light.setAxisMinimum(0);
+        YAxis left_axis_acc = chart_acc.getAxisLeft();
+        left_axis_acc.setDrawGridLines(true);
+        left_axis_acc.setDrawAxisLine(true);
+        left_axis_acc.setAxisMinimum(0);
+        left_axis_acc.setAxisMaximum(100);
 
         // DataSet (= Line)
-        LineDataSet dataset_light = new LineDataSet(values_light, "Brightness");
-        dataset_light.setColor(Color.BLUE);
-        dataset_light.setDrawCircles(false);
-        dataset_light.setLineWidth(2);
-        dataset_light.setDrawValues(false);
-        dataset_light.setValueFormatter(new IValueFormatter() {
-            @Override
-            public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
-                SimpleDateFormat parse_format = new SimpleDateFormat("hhmmss");
-                SimpleDateFormat return_format = new SimpleDateFormat("hh:mm:ss");
-                Date date = null;
-                try {
-                    date = parse_format.parse(String.valueOf((int) value));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                return return_format.format(date);
-            }
-        });
+        LineDataSet dataset_acc = new LineDataSet(values_acc, "Sleep Cycle");
+        dataset_acc.setColor(Color.BLUE);
+        dataset_acc.setDrawCircles(false);
+        dataset_acc.setLineWidth(2);
+        dataset_acc.setDrawValues(false);
 
         // Set the chart
-        LineData data_light = new LineData(dataset_light);
-        chart_light.setData(data_light);
-        chart_light.animateXY(2000, 2000);
-        chart_light.invalidate();
+        LineData data_acc = new LineData(dataset_acc);
+        chart_acc.setData(data_acc);
+        //chart_acc.animateXY(2000, 2000);
+        chart_acc.invalidate();
 
 
         // For analyzing multiple sounds
