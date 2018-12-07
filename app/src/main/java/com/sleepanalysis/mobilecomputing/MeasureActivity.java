@@ -21,13 +21,22 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.commons.compress.utils.IOUtils;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
@@ -44,6 +53,7 @@ import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
 import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
 import cafe.adriel.androidaudioconverter.callback.ILoadCallback;
 import cafe.adriel.androidaudioconverter.model.AudioFormat;
+import weka.core.Instances;
 
 public class MeasureActivity extends AppCompatActivity {
 
@@ -67,6 +77,8 @@ public class MeasureActivity extends AppCompatActivity {
     int sampleRate = 22050;
     int bufferSize = 1024;
     int bufferOverlap = 128;
+    LinkedList<File> snore_set;
+    int grace;
 
     SensorManager mSensorManager;
 
@@ -103,7 +115,7 @@ public class MeasureActivity extends AppCompatActivity {
         if (!folder.exists()) {
             folder.mkdirs();
         }
-        folder = new File(date_string + "arff/");
+        folder = new File(date_string + "snore/");
         if (!folder.exists()) {
             folder.mkdirs();
         }
@@ -177,6 +189,8 @@ public class MeasureActivity extends AppCompatActivity {
                                             time = new Date(record_start_time);
                                             time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
                                             time_string = date_string + "recorded/" + time_format.format(time);
+                                            snore_set = new LinkedList<>();
+                                            grace = 0;
 
                                             try {
                                                 File mp3_file = new File(time_string + ".mp3");
@@ -199,6 +213,14 @@ public class MeasureActivity extends AppCompatActivity {
                                             // Watching recorder to finish writing the file
                                             mp3_observer = new MP3FileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             mp3_observer.startWatching();
+
+//                                            try {
+//                                                File arff_file = new File(time_string + ".arff");
+//                                                arff_file.createNewFile();
+//                                            } catch (IOException e) {
+//                                            }
+//                                            arff_observer = new ARFFFileObserver(time_string, FileObserver.CLOSE_WRITE);
+//                                            arff_observer.startWatching();
                                             try {
                                                 File wav_file = new File(time_string + ".wav");
                                                 wav_file.createNewFile();
@@ -235,6 +257,13 @@ public class MeasureActivity extends AppCompatActivity {
                                             mp3_observer = new MP3FileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             mp3_observer.startWatching();
 
+//                                            try {
+//                                                File arff_file = new File(time_string + ".arff");
+//                                                arff_file.createNewFile();
+//                                            } catch (IOException e) {
+//                                            }
+//                                            arff_observer = new ARFFFileObserver(time_string, FileObserver.CLOSE_WRITE);
+//                                            arff_observer.startWatching();
                                             try {
                                                 File wav_file = new File(time_string + ".wav");
                                                 wav_file.createNewFile();
@@ -246,7 +275,7 @@ public class MeasureActivity extends AppCompatActivity {
                                     }
                                 });
                             }
-                        }, 0, 10000);
+                        }, 0, 5000);
 
                         Toast.makeText(getApplicationContext(), "Starting Measurement", Toast.LENGTH_LONG).show();
                         mSensorManager.registerListener(mLightListener, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
@@ -366,7 +395,7 @@ public class MeasureActivity extends AppCompatActivity {
         }
 
         public void onEvent(int event, String path) {
-            Log.d("옵져버", "옵져버 실행: " + this.path + ".mp3");
+//            Log.d("옵져버", "옵져버 실행: " + this.path + ".mp3");
             // mp3 to wav
             AndroidAudioConverter.load(MeasureActivity.this, new ILoadCallback() {
                 @Override
@@ -413,7 +442,7 @@ public class MeasureActivity extends AppCompatActivity {
         }
 
         public void onEvent(int event, String path) {
-            Log.d("옵져버", "옵져버 실행: " + this.path + ".wav");
+//            Log.d("옵져버", "옵져버 실행: " + this.path + ".wav");
             try {
                 File mfcc_file = new File(this.path + ".arff");
                 FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
@@ -444,7 +473,6 @@ public class MeasureActivity extends AppCompatActivity {
                         "@data\n";
                 mfcc_fos.write(arff_info.getBytes());
 
-//                new AndroidFFMPEGLocator(this);
                 final List<float[]> mfccList = new ArrayList<>(200);
                 dispatcher = AudioDispatcherFactory.fromPipe(this.path + ".wav", sampleRate, bufferSize, bufferOverlap);
                 final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 0, 20000);
@@ -470,12 +498,110 @@ public class MeasureActivity extends AppCompatActivity {
                             .getBytes()
                     );
                 }
-                Log.d("mfcc_complete", path);
+                Log.d("옵져버", "mfcc complete");
                 mfcc_fos.close();
             } catch (IOException e) {
-                Log.d("mfcc_failed", "mfcc_failed");}
+                Log.d("옵져버", "mfcc_failed");}
+
+
+            // classification of sound
+            WekaWrapper wrapper = new WekaWrapper();
+            int count = 0;
+            int numInstances = 0;
+            int partial_result = 0;
+            try {
+                Instances data = new Instances(new BufferedReader(new InputStreamReader(new FileInputStream(this.path + ".arff"))));
+                // set snore Yes or No index
+                data.setClassIndex(data.numAttributes()-1);
+                numInstances = data.numInstances();
+                for (int i=0; i<numInstances; i++) {
+                    double result = wrapper.classifyInstance(data.instance(i));
+
+                    if (data.classAttribute().value((int)result).equals("yes")) {
+                        count++;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (numInstances != 0) {
+                partial_result = count * 100 / numInstances;
+                if (partial_result >= 15) {
+                    snore_set.add(new File(this.path + ".mp3"));
+                    grace = 0;
+                    Log.d("Classification", "snore detected");
+                }
+                else if (grace == 0 && snore_set.size() != 0) {
+                    snore_set.add(new File(this.path + ".mp3"));
+                    grace++;
+                    Log.d("Classification", "grace detected");
+                } else if (grace == 0) {
+                    // case for debugging
+                    Log.d("Classification", "non-snoring detected");
+                } else if (grace == 1) {
+                    try {
+                        Log.d("Classification", "merge detected");
+                        File target_file = new File(this.path.replace("recorded", "snore") + " " + String.valueOf(snore_set.size() * 5) + ".mp3");
+                        File[] snore_files = new File[snore_set.size()];
+                        for (int i = 0; i < snore_set.size(); i++) {
+                            snore_files[i] = snore_set.get(i);
+                        }
+                        mergeMP3(snore_files, target_file);
+                        grace = 0;
+                        snore_set.clear();
+                        Log.d("Classification", "merge success");
+                    } catch (IOException e) {
+                    }
+                }
+                Log.d("Weka Classification / ", this.path + ".arff : " + String.valueOf(partial_result) + "%");
+            }
 
             this.stopWatching();
+        }
+    }
+
+    private void mergeMP3(File[] inputs, File output) throws IOException {
+        FileOutputStream outputStream = null;
+        try {
+            outputStream = new FileOutputStream(output);
+            for (File input : inputs) {
+                FileInputStream inputStream = null;
+                try {
+                    IOUtils.copy(inputStream = new FileInputStream(input),
+                            outputStream);
+                } finally {
+                    if (inputStream != null) try {
+                        inputStream.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } finally {
+            if (outputStream != null) try {
+                outputStream.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static class IOUtils {
+        private static final int BUF_SIZE = 0x1000;
+
+        public static long copy(InputStream from, OutputStream to)
+                throws IOException {
+            byte[] buf = new byte[BUF_SIZE];
+            long total = 0;
+            while (true) {
+                int r = from.read(buf);
+                if (r == -1) {
+                    break;
+                }
+                to.write(buf, 0, r);
+                total += r;
+            }
+            return total;
         }
     }
 
