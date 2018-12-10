@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -100,6 +101,8 @@ public class MeasureActivity extends AppCompatActivity {
     TextView description;
     boolean isMeasured;
 
+    ArrayList<Long> timeList = new ArrayList<Long>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -124,12 +127,11 @@ public class MeasureActivity extends AppCompatActivity {
         }
 
         // Permission for recording & writing external strorage
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO},
-                    10);}
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    10);}
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO
+                                                                        , Manifest.permission.WRITE_EXTERNAL_STORAGE}, 10);
+        }
 
         // button_result 클릭 시 ResultActivity로 전환
         isMeasured = false;
@@ -139,16 +141,17 @@ public class MeasureActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(MeasureActivity.this, ResultActivity.class);
 
-//                if (!isMeasured) {
-//                    Toast.makeText(getApplicationContext(), "Please measure first", Toast.LENGTH_LONG).show();
-//                    return;
-//                }
+                if (!isMeasured) {
+                    Toast.makeText(getApplicationContext(), "Please measure first", Toast.LENGTH_LONG).show();
+                    return;
+                }
 
                 sleep_time = end_time - start_time;
                 intent.putExtra("date_string", date_string);
                 intent.putExtra("sleep_time", sleep_time);
                 intent.putExtra("start_time", start_time);
                 intent.putExtra("end_time", end_time);
+                intent.putExtra("time_list", timeList);
                 Log.d("Sleep time : ", String.valueOf(sleep_time));
                 startActivity(intent);
             }
@@ -339,6 +342,50 @@ public class MeasureActivity extends AppCompatActivity {
                                 Toast.LENGTH_LONG).show();
 
                         Log.d("End time: ", String.valueOf(end_time));
+
+                        // Acc file analyze
+                        FileReader acc_fr;
+                        BufferedReader acc_br;
+                        acc_file = new File(date_string + "acc.txt");
+
+                        try {
+                            // currMillSec
+
+//                            InputStream in = getResources().openRawResource(R.raw.acc_curr4);
+//
+//                            InputStreamReader stream = new InputStreamReader(in, "utf-8");
+//                            acc_br = new BufferedReader(stream);
+
+                            acc_fr = new FileReader(acc_file);
+                            acc_br = new BufferedReader(acc_fr);
+                            String line;
+                            long t;
+                            int start = 100, end = 100, max = 70, min = 20;
+                            timeList = new ArrayList<Long>();
+                            long startT = 0, endT = 0;
+                            line = acc_br.readLine();
+                            startT = Long.valueOf(line.split(" ")[0]);
+                            timeList.add(startT);
+                            Log.d("timeList", "startTime = " + startT);
+                            while((line = acc_br.readLine()) != null){
+                                String[] split = line.split(" ");
+                                t = Long.valueOf(split[0]);
+                                endT = t;
+                                if (t >= startT + 45 * 60 * 1000) {
+                                    timeList.add(t);
+                                    startT = t;
+                                    Log.d("timeList", "time = " + t);
+                                }
+                            }
+                            timeList.add(endT);
+                            Log.d("timeList", "endTime = " + endT);
+
+
+                        } catch(Exception e) {
+                            Log.d("Acc Analyze", "fail");
+                        }
+
+
                         break;
 
                 }
@@ -384,10 +431,10 @@ public class MeasureActivity extends AppCompatActivity {
             acc_info.setText(String.format("%.4f", accX) + "\n" + String.format("%4f", accY) + "\n" + String.format("%4f", accZ));
 
             // save data file
-            current_time = System.currentTimeMillis();
-            date = new Date(current_time);
-            date_format = new SimpleDateFormat("hh:mm:ss", Locale.KOREAN);
-
+//            current_time = System.currentTimeMillis();
+//            date = new Date(1544340884063L);
+//            date_format = new SimpleDateFormat("MM:dd:hh:mm:ss", Locale.KOREAN);
+//            Log.d("day", date_format.format(date));
             String data = " " + String.format("%.4f", accX)
                     + " " + String.format("%.4f", accY)
                     + " " + String.format("%.4f", accZ)
