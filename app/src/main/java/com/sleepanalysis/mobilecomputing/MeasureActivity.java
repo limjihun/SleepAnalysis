@@ -21,8 +21,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.apache.commons.compress.utils.IOUtils;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.SequenceInputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -101,7 +98,7 @@ public class MeasureActivity extends AppCompatActivity {
     TextView description;
     boolean isMeasured;
 
-    ArrayList<Long> timeList = new ArrayList<Long>();
+    ArrayList<Long> timeList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -182,7 +179,9 @@ public class MeasureActivity extends AppCompatActivity {
                         snore_txt = new File(date_string + "snore.txt");
                         try {
                             snore_fos = new FileOutputStream(snore_txt);
-                        } catch (IOException e) {}
+                        } catch (IOException e) {
+                            Log.e("IOException", "IOException");
+                        }
 
                         // recording every minutes by scheduling
                         new AndroidFFMPEGLocator(MeasureActivity.this);
@@ -207,6 +206,8 @@ public class MeasureActivity extends AppCompatActivity {
                                                 File mp3_file = new File(time_string + ".mp3");
                                                 mp3_file.createNewFile();
                                             } catch (IOException e) {
+                                                Log.e("IOException", "IOException");
+
                                             }
 
                                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -225,17 +226,12 @@ public class MeasureActivity extends AppCompatActivity {
                                             mp3_observer = new MP3FileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             mp3_observer.startWatching();
 
-//                                            try {
-//                                                File arff_file = new File(time_string + ".arff");
-//                                                arff_file.createNewFile();
-//                                            } catch (IOException e) {
-//                                            }
-//                                            arff_observer = new ARFFFileObserver(time_string, FileObserver.CLOSE_WRITE);
-//                                            arff_observer.startWatching();
                                             try {
                                                 File wav_file = new File(time_string + ".wav");
                                                 wav_file.createNewFile();
                                             } catch (IOException e) {
+                                                Log.e("IOException", "IOException");
+
                                             }
                                             wav_observer = new WAVFileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             wav_observer.startWatching();
@@ -251,6 +247,8 @@ public class MeasureActivity extends AppCompatActivity {
                                                 File mp3_file = new File(time_string + ".mp3");
                                                 mp3_file.createNewFile();
                                             } catch (IOException e) {
+                                                Log.e("IOException", "IOException");
+
                                             }
 
                                             recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -268,17 +266,12 @@ public class MeasureActivity extends AppCompatActivity {
                                             mp3_observer = new MP3FileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             mp3_observer.startWatching();
 
-//                                            try {
-//                                                File arff_file = new File(time_string + ".arff");
-//                                                arff_file.createNewFile();
-//                                            } catch (IOException e) {
-//                                            }
-//                                            arff_observer = new ARFFFileObserver(time_string, FileObserver.CLOSE_WRITE);
-//                                            arff_observer.startWatching();
                                             try {
                                                 File wav_file = new File(time_string + ".wav");
                                                 wav_file.createNewFile();
                                             } catch (IOException e) {
+                                                Log.e("IOException", "IOException");
+
                                             }
                                             wav_observer = new WAVFileObserver(time_string, FileObserver.CLOSE_WRITE);
                                             wav_observer.startWatching();
@@ -298,9 +291,11 @@ public class MeasureActivity extends AppCompatActivity {
                         try {
                             light_fos = new FileOutputStream(light_file);
                             acc_fos = new FileOutputStream(acc_file);
-                        } catch (IOException e) {}
+                        } catch (IOException e) {
+                            Log.e("IOException", "IOException");
+                        }
 
-                        description.setVisibility(View.INVISIBLE);
+                        description.setText(R.string.description2);
 
                         status = END;
                         Log.d("Start time: ", String.valueOf(start_time));
@@ -310,7 +305,7 @@ public class MeasureActivity extends AppCompatActivity {
                         button_start.setText(getText(R.string.start));
                         end_time = System.currentTimeMillis();
 
-                        description.setVisibility(View.VISIBLE);
+                        description.setText(R.string.description);
                         mSensorManager.unregisterListener(mLightListener);
                         mSensorManager.unregisterListener(mAccListener);
 
@@ -318,7 +313,9 @@ public class MeasureActivity extends AppCompatActivity {
                         try {
                             light_fos.close();
                             acc_fos.close();
-                        } catch (IOException e) {}
+                        } catch (IOException e) {
+                            Log.e("IOException", "IOException");
+                        }
 
                         status = START;
                         Log.d("is Recording? ", String.valueOf(isRecording));
@@ -336,6 +333,7 @@ public class MeasureActivity extends AppCompatActivity {
                         try {
                             snore_fos.close();
                         } catch (IOException e) {
+                            Log.e("IOException", "IOException");
                         }
 
                         Toast.makeText(getApplicationContext(), "Stopping Measurement",
@@ -350,7 +348,6 @@ public class MeasureActivity extends AppCompatActivity {
 
                         try {
                             // currMillSec
-
 //                            InputStream in = getResources().openRawResource(R.raw.acc_curr4);
 //
 //                            InputStreamReader stream = new InputStreamReader(in, "utf-8");
@@ -360,9 +357,8 @@ public class MeasureActivity extends AppCompatActivity {
                             acc_br = new BufferedReader(acc_fr);
                             String line;
                             long t;
-                            int start = 100, end = 100, max = 70, min = 20;
-                            timeList = new ArrayList<Long>();
-                            long startT = 0, endT = 0;
+                            timeList = new ArrayList<>();
+                            long startT, endT = 0;
                             line = acc_br.readLine();
                             startT = Long.valueOf(line.split(" ")[0]);
                             timeList.add(startT);
@@ -410,7 +406,7 @@ public class MeasureActivity extends AppCompatActivity {
 
             String data = " " + String.format("%.4f", event.values[0]) + "\n";
             try {
-                light_fos.write(date_format.format(date).getBytes());
+                light_fos.write(String.valueOf(current_time).getBytes());
                 light_fos.write(data.getBytes());
             } catch (IOException e) {}
         }
@@ -455,7 +451,6 @@ public class MeasureActivity extends AppCompatActivity {
         }
 
         public void onEvent(int event, String path) {
-//            Log.d("옵져버", "옵져버 실행: " + this.path + ".mp3");
             // mp3 to wav
             AndroidAudioConverter.load(MeasureActivity.this, new ILoadCallback() {
                 @Override
@@ -472,13 +467,11 @@ public class MeasureActivity extends AppCompatActivity {
             IConvertCallback callback = new IConvertCallback() {
                 @Override
                 public void onSuccess(File convertedFile) {
-//                    Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_SHORT).show();
                     Log.d("wav conversion", "Conversion Succeeded");
                 }
 
                 @Override
                 public void onFailure(Exception error) {
-//                    Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_SHORT).show();
                     Log.d("wav conversion", "Conversion Failed");
                 }
             };
@@ -502,7 +495,6 @@ public class MeasureActivity extends AppCompatActivity {
         }
 
         public void onEvent(int event, String path) {
-//            Log.d("옵져버", "옵져버 실행: " + this.path + ".wav");
             try {
                 File mfcc_file = new File(this.path + ".arff");
                 FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
