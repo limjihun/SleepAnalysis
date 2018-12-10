@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
@@ -75,51 +76,114 @@ public class ResultActivity extends AppCompatActivity {
         ArrayList<Entry> values_acc = new ArrayList<Entry>();
         String date_string = intent.getExtras().getString("date_string");
         File acc_file = new File(date_string + "acc.txt");
-//        try{
-//            InputStream in = getResources().openRawResource(R.raw.acc6);
-//
-//            if(in != null) {
-//                InputStreamReader stream = new InputStreamReader(in, "utf-8");
-//                BufferedReader buffer = new BufferedReader(stream);
-//
-//                String line;
-//                float x, y, max = 100, min = 0;
-//                int start_time2 = 33436; //(int)start_time/1000 % (24 * 60 * 60);
-//                Log.d("data", "start_time2 :" + start_time2);
-//                while ((line = buffer.readLine()) != null) {
-//                    String[] split = line.split(" ");
-//                    String[] hhmmss = split[0].split(":");
-//                    int sec = Integer.valueOf(hhmmss[0]) * 3600 + Integer.valueOf(hhmmss[1]) * 60 + Integer.valueOf(hhmmss[2]);
-//                    x = sec - start_time2;
-//                    // AM time
-//                    if (x < 0) x = x + 12 * 3600;
-//
-//                    // y = Float.valueOf(split[1]);
-//                    y = (max-min)/2*(float)Math.cos((x*Math.PI)/(45*60))+(max+min)/2;
-//
-//                    values_acc.add(new Entry(x, y));
-//                    Log.d("data", "sec : " + sec);
-//                    Log.d("data", x + ", " + y + ", " + x/(45*60));
-//                }
-//
-//                in.close();
-//            }
+        ArrayList<Long> timeList = (ArrayList<Long>)intent.getSerializableExtra("time_list");
+/*        // hh:mm:ss
+        try{
+            InputStream in = getResources().openRawResource(R.raw.acc6);
 
+            if(in != null) {
+                InputStreamReader stream = new InputStreamReader(in, "utf-8");
+                BufferedReader buffer = new BufferedReader(stream);
+
+                String line;
+                float x, y, max = 100, min = 0;
+                int start_time2 = 33436; //(int)start_time/1000 % (24 * 60 * 60);
+                Log.d("data", "start_time2 :" + start_time2);
+                while ((line = buffer.readLine()) != null) {
+                    String[] split = line.split(" ");
+                    String[] hhmmss = split[0].split(":");
+                    int sec = Integer.valueOf(hhmmss[0]) * 3600 + Integer.valueOf(hhmmss[1]) * 60 + Integer.valueOf(hhmmss[2]);
+                    x = sec - start_time2;
+                    // AM time
+                    if (x < 0) x = x + 12 * 3600;
+
+                    // y = Float.valueOf(split[1]);
+                    y = (max-min)/2*(float)Math.cos((x*Math.PI)/(45*60))+(max+min)/2;
+
+                    values_acc.add(new Entry(x, y));
+                    Log.d("data", "sec : " + sec);
+                    Log.d("data", x + ", " + y + ", " + x/(45*60));
+                }
+
+                in.close();
+            }
+*/
         try {
-            acc_fr = new FileReader(acc_file);
-            acc_br = new BufferedReader(acc_fr);
+            InputStream in = getResources().openRawResource(R.raw.acc_curr4);
+            InputStreamReader stream = new InputStreamReader(in, "utf-8");
+            acc_br = new BufferedReader(stream);
+
+//            acc_fr = new FileReader(acc_file);
+//            acc_br = new BufferedReader(acc_fr);
             String line;
             int x;
-            float y, max = 100, min = 0;
+            float y, max = 100, min = 10;
+            int phase = 0;
+            int diff = 0;
+
+            // Toss & turn test by median
+            float threshold = 0.02F;
+            float extra = 0.0F;
+            long prev = timeList.get(0);
+            ArrayList<Float> accList = new ArrayList<Float>();
+            accList.add(0.0F);
+            accList.add(0.0F);
+            accList.add(0.0F);
+            accList.add(0.0F);
 
             while((line = acc_br.readLine()) != null){
                 String[] split = line.split(" ");
-                int sec =
-                x = (int)((Long.valueOf(split[0]) - start_time)/1000);
-                // AM time
-                if (x < 0) x = x + 12 * 3600;
-                y = (max-min)/2*(float)Math.cos((x*Math.PI)/(45*60))+(max+min)/2;
+                /////////
+                start_time = timeList.get(0);
+                long currSec = Long.valueOf(split[0]);
+                x = (int)((currSec - start_time)/1000);
+                if (diff > 3) {
+                    accList.set(0, accList.get(3));
+                    accList.set(1, accList.get(3));
+                    accList.set(2, accList.get(3));
+                }
+                // Toss & turn test
+                accList.add(Float.valueOf(split[1]));
+                accList.remove(0);
+                float error = Math.abs((accList.get(0) + accList.get(1) + accList.get(2))/3 - accList.get(3));
+                if (error > threshold) {
+                    extra = extra + 0.5F;
+                    Log.d("tossing", String.valueOf(error));
+                } else {
+                    diff = (int)(currSec-prev)/1000;
+                    if (diff==0) diff = 1;
+                    extra = extra - diff * 0.001F;
+                    Log.d("diff", String.valueOf(diff));
+                }
 
+                prev = currSec;
+                Log.d("phase", currSec + ", " + timeList.get(phase) + ", " + phase);
+                if (phase < timeList.size()) {
+                    if (currSec >= timeList.get(phase+1)) {
+                        phase++;
+                        if (phase == 0) {
+                            max = 100; min = 10;
+                        } else if (phase == timeList.size()-1) {
+                            max = 100;
+                        } else {
+                            if (phase % 2 == 1) {
+                                Log.d("extra", String.valueOf(extra));
+                                max = 70 + extra;
+                                min = min + extra;
+                                extra = 0;
+                            } else {
+                                Log.d("extra", String.valueOf(extra));
+                                min = 20 + extra;
+                                max = max + extra;
+                                extra = 0;
+                            }
+                        }
+                    }
+                }
+
+                y = (max-min)/2*(float)Math.cos((x*Math.PI)/(45*60))+(max+min)/2 + extra;
+                if (y >= 100) y = 100;
+                if (y <= 0) y = 0;
                 values_acc.add(new Entry(x, y));
                 Log.d("data", x + ", " + y);
             }
@@ -129,30 +193,48 @@ public class ResultActivity extends AppCompatActivity {
 
 
         // Acceleration Graph
-        LineChart chart_acc = findViewById(R.id.brightness_chart);
+        LineChart chart_acc = findViewById(R.id.acc_chart);
         chart_acc.setDescription(null);
-        chart_acc.setBackgroundColor(Color.parseColor("#EFEFFB"));
+        chart_acc.setBackgroundColor(Color.parseColor("#38424F"));
         chart_acc.getAxisRight().setEnabled(false);
         chart_acc.setScaleYEnabled(false);
         chart_acc.setDoubleTapToZoomEnabled(false);
 
         XAxis x_axis_acc = chart_acc.getXAxis();
         x_axis_acc.setPosition(XAxis.XAxisPosition.BOTTOM);
-        x_axis_acc.setDrawGridLines(true);
+        //x_axis_acc.setDrawGridLines(true);
         x_axis_acc.setTextSize(1);
+        x_axis_acc.setEnabled(false);
+        x_axis_acc.setLabelCount(8);
+        x_axis_acc.setTextColor(Color.WHITE);
 
         YAxis left_axis_acc = chart_acc.getAxisLeft();
-        left_axis_acc.setDrawGridLines(true);
-        left_axis_acc.setDrawAxisLine(true);
+        //left_axis_acc.setDrawGridLines(true);
+        //left_axis_acc.setDrawAxisLine(true);
         left_axis_acc.setAxisMinimum(0);
         left_axis_acc.setAxisMaximum(100);
+        left_axis_acc.setTextColor(Color.WHITE);
+
+        // Labels
+        ArrayList<String> labels = new ArrayList<String>();
+        labels.add("1");
+        labels.add("2");
+        labels.add("3");
+        labels.add("4");
+        labels.add("5");
 
         // DataSet (= Line)
         LineDataSet dataset_acc = new LineDataSet(values_acc, "Sleep Cycle");
-        dataset_acc.setColor(Color.BLUE);
+        dataset_acc.setColor(Color.WHITE);
         dataset_acc.setDrawCircles(false);
         dataset_acc.setLineWidth(2);
         dataset_acc.setDrawValues(false);
+        dataset_acc.setValueTextColor(Color.WHITE);
+        dataset_acc.setDrawFilled(true);
+
+        // Bottom legend
+        Legend legend = chart_acc.getLegend();
+        legend.setTextColor(Color.WHITE);
 
         // Set the chart
         LineData data_acc = new LineData(dataset_acc);
