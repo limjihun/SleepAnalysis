@@ -3,12 +3,11 @@ package com.sleepanalysis.mobilecomputing;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Environment;
+import android.os.FileObserver;
 import android.support.v4.app.ActivityCompat;
 import android.content.Context;
-import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -22,21 +21,40 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.commons.compress.utils.IOUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
-import com.github.mikephil.charting.data.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
 
-import java.util.ArrayList;
+import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.AudioProcessor;
+import be.tarsos.dsp.io.android.AndroidFFMPEGLocator;
+import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import be.tarsos.dsp.mfcc.MFCC;
+import cafe.adriel.androidaudioconverter.AndroidAudioConverter;
+import cafe.adriel.androidaudioconverter.callback.IConvertCallback;
+import cafe.adriel.androidaudioconverter.callback.ILoadCallback;
+import cafe.adriel.androidaudioconverter.model.AudioFormat;
+import weka.core.Instances;
 
 public class MeasureActivity extends AppCompatActivity {
 
@@ -44,15 +62,27 @@ public class MeasureActivity extends AppCompatActivity {
     final static int END = 1;
 
     int status = START;
-    long start_time, end_time, sleep_time, current_time = 0L;
-    Date date;
-    String date_string;
-    SimpleDateFormat date_format;
+    long start_time, end_time, sleep_time, current_time, record_start_time= 0L;
+    Date date, time;
+    String date_string, time_string;
+    SimpleDateFormat date_format, time_format;
     FileOutputStream acc_fos;
     FileOutputStream light_fos;
 
     MediaRecorder recorder;
     boolean isRecording = false;
+    Timer timer;
+    MP3FileObserver mp3_observer;
+    WAVFileObserver wav_observer;
+    AudioDispatcher dispatcher;
+    int sampleRate = 22050;
+    int bufferSize = 1024;
+    int bufferOverlap = 128;
+    LinkedList<File> snore_set;
+    LinkedList<Long> snore_timeset;
+    int grace;
+    File snore_txt;
+    FileOutputStream snore_fos;
 
     SensorManager mSensorManager;
 
@@ -84,6 +114,14 @@ public class MeasureActivity extends AppCompatActivity {
         date_format = new SimpleDateFormat("yyyy-MM-dd", Locale.KOREAN);
         date_string = Environment.getExternalStorageDirectory().getAbsolutePath() + "/SleepAnalysis/" + date_format.format(date) + "/";
         File folder = new File(date_string);
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        folder = new File(date_string + "recorded/");
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        folder = new File(date_string + "snore/");
         if (!folder.exists()) {
             folder.mkdirs();
         }
@@ -141,20 +179,114 @@ public class MeasureActivity extends AppCompatActivity {
                     case START :
                         button_start.setText(getText(R.string.end));
                         start_time = System.currentTimeMillis();
+                        snore_txt = new File(date_string + "snore.txt");
+                        try {
+                            snore_fos = new FileOutputStream(snore_txt);
+                        } catch (IOException e) {}
 
-                        // recording
+                        // recording every minutes by scheduling
+                        new AndroidFFMPEGLocator(MeasureActivity.this);
                         recorder = new MediaRecorder();
-                        try{
-                            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-                            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-                            recorder.setOutputFile(date_string + "recorded.mp3");
-                            recorder.prepare();
-                            recorder.start();
-                            isRecording = true;
-                        } catch (IOException e){
-                            Log.d("Record_Failed", "Start_Record_Failed");
-                        }
+                        timer = new Timer();
+                        timer.schedule(new TimerTask(){
+                            @Override
+                            public void run() {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (!isRecording) {
+                                            record_start_time = System.currentTimeMillis();
+                                            time = new Date(record_start_time);
+                                            time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
+                                            time_string = date_string + "recorded/" + time_format.format(time);
+                                            snore_set = new LinkedList<>();
+                                            snore_timeset = new LinkedList<>();
+                                            grace = 0;
+
+                                            try {
+                                                File mp3_file = new File(time_string + ".mp3");
+                                                mp3_file.createNewFile();
+                                            } catch (IOException e) {
+                                            }
+
+                                            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                                            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                                            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+                                            recorder.setOutputFile(time_string + ".mp3");
+                                            try {
+                                                recorder.prepare();
+                                            } catch (IOException e) {
+                                                Log.d("Record_Failed", "Start_Record_Failed in runOnUiThread : If");
+                                            }
+                                            recorder.start();
+                                            isRecording = true;
+
+                                            // Watching recorder to finish writing the file
+                                            mp3_observer = new MP3FileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            mp3_observer.startWatching();
+
+//                                            try {
+//                                                File arff_file = new File(time_string + ".arff");
+//                                                arff_file.createNewFile();
+//                                            } catch (IOException e) {
+//                                            }
+//                                            arff_observer = new ARFFFileObserver(time_string, FileObserver.CLOSE_WRITE);
+//                                            arff_observer.startWatching();
+                                            try {
+                                                File wav_file = new File(time_string + ".wav");
+                                                wav_file.createNewFile();
+                                            } catch (IOException e) {
+                                            }
+                                            wav_observer = new WAVFileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            wav_observer.startWatching();
+                                        } else {
+                                            recorder.reset();
+
+                                            record_start_time = System.currentTimeMillis();
+                                            time = new Date(record_start_time);
+                                            time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
+                                            time_string = date_string + "recorded/" + time_format.format(time);
+
+                                            try {
+                                                File mp3_file = new File(time_string + ".mp3");
+                                                mp3_file.createNewFile();
+                                            } catch (IOException e) {
+                                            }
+
+                                            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                                            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                                            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+                                            recorder.setOutputFile(time_string + ".mp3");
+                                            try {
+                                                recorder.prepare();
+                                            } catch (IOException e) {
+                                                Log.d("Record_Failed", "Start_Record_Failed in runOnUiThread : Else");
+                                            }
+                                            recorder.start();
+
+                                            // Watching recorder to finish writing the file
+                                            mp3_observer = new MP3FileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            mp3_observer.startWatching();
+
+//                                            try {
+//                                                File arff_file = new File(time_string + ".arff");
+//                                                arff_file.createNewFile();
+//                                            } catch (IOException e) {
+//                                            }
+//                                            arff_observer = new ARFFFileObserver(time_string, FileObserver.CLOSE_WRITE);
+//                                            arff_observer.startWatching();
+                                            try {
+                                                File wav_file = new File(time_string + ".wav");
+                                                wav_file.createNewFile();
+                                            } catch (IOException e) {
+                                            }
+                                            wav_observer = new WAVFileObserver(time_string, FileObserver.CLOSE_WRITE);
+                                            wav_observer.startWatching();
+                                        }
+                                    }
+                                });
+                            }
+                        }, 0, 5000);
 
                         Toast.makeText(getApplicationContext(), "Starting Measurement", Toast.LENGTH_LONG).show();
                         mSensorManager.registerListener(mLightListener, mLightSensor, SensorManager.SENSOR_DELAY_NORMAL);
@@ -192,6 +324,7 @@ public class MeasureActivity extends AppCompatActivity {
                         Log.d("is Recording? ", String.valueOf(isRecording));
 
                         if (isRecording) {
+                            timer.cancel();
                             recorder.stop();
                             recorder.release();
                             recorder = null;
@@ -199,6 +332,11 @@ public class MeasureActivity extends AppCompatActivity {
                         }
 
                         isMeasured = true;
+
+                        try {
+                            snore_fos.close();
+                        } catch (IOException e) {
+                        }
 
                         Toast.makeText(getApplicationContext(), "Stopping Measurement",
                                 Toast.LENGTH_LONG).show();
@@ -307,4 +445,231 @@ public class MeasureActivity extends AppCompatActivity {
             } catch (IOException e) {}
         }
     }
+
+    private class MP3FileObserver extends FileObserver {
+        private String path;
+
+        public MP3FileObserver(String path, int mask) {
+            super(path + ".mp3", mask);
+            this.path = path;
+        }
+
+        public void onEvent(int event, String path) {
+//            Log.d("옵져버", "옵져버 실행: " + this.path + ".mp3");
+            // mp3 to wav
+            AndroidAudioConverter.load(MeasureActivity.this, new ILoadCallback() {
+                @Override
+                public void onSuccess() {
+                }
+
+                @Override
+                public void onFailure(Exception error) {
+                    Log.d("wav conversion", "Callback Failed");
+                }
+            });
+            Log.d("wav conversion", this.path + ".mp3");
+            File recorded = new File(this.path + ".mp3");
+            IConvertCallback callback = new IConvertCallback() {
+                @Override
+                public void onSuccess(File convertedFile) {
+//                    Toast.makeText(getApplicationContext(), "wav conversion succeeded", Toast.LENGTH_SHORT).show();
+                    Log.d("wav conversion", "Conversion Succeeded");
+                }
+
+                @Override
+                public void onFailure(Exception error) {
+//                    Toast.makeText(getApplicationContext(), "wav conversion failed", Toast.LENGTH_SHORT).show();
+                    Log.d("wav conversion", "Conversion Failed");
+                }
+            };
+
+            AndroidAudioConverter.with(MeasureActivity.this)
+                    .setFile(recorded)
+                    .setFormat(AudioFormat.WAV)
+                    .setCallback(callback)
+                    .convert();
+
+            this.stopWatching();
+        }
+    }
+
+    private class WAVFileObserver extends FileObserver {
+        private String path;
+
+        public WAVFileObserver(String path, int mask) {
+            super(path + ".wav", mask);
+            this.path = path;
+        }
+
+        public void onEvent(int event, String path) {
+//            Log.d("옵져버", "옵져버 실행: " + this.path + ".wav");
+            try {
+                File mfcc_file = new File(this.path + ".arff");
+                FileOutputStream mfcc_fos = new FileOutputStream(mfcc_file);
+                String arff_info = "@relation snore\n" +
+                        "\n" +
+                        "@attribute mfcc01 real\n" +
+                        "@attribute mfcc02 real\n" +
+                        "@attribute mfcc03 real\n" +
+                        "@attribute mfcc04 real\n" +
+                        "@attribute mfcc05 real\n" +
+                        "@attribute mfcc06 real\n" +
+                        "@attribute mfcc07 real\n" +
+                        "@attribute mfcc08 real\n" +
+                        "@attribute mfcc09 real\n" +
+                        "@attribute mfcc10 real\n" +
+                        "@attribute mfcc11 real\n" +
+                        "@attribute mfcc12 real\n" +
+                        "@attribute mfcc13 real\n" +
+                        "@attribute mfcc14 real\n" +
+                        "@attribute mfcc15 real\n" +
+                        "@attribute mfcc16 real\n" +
+                        "@attribute mfcc17 real\n" +
+                        "@attribute mfcc18 real\n" +
+                        "@attribute mfcc19 real\n" +
+                        "@attribute mfcc20 real\n" +
+                        "@attribute is_snore {yes, no}\n" +
+                        "\n" +
+                        "@data\n";
+                mfcc_fos.write(arff_info.getBytes());
+
+                final List<float[]> mfccList = new ArrayList<>(200);
+                dispatcher = AudioDispatcherFactory.fromPipe(this.path + ".wav", sampleRate, bufferSize, bufferOverlap);
+                final MFCC mfcc = new MFCC(bufferSize, sampleRate, 20, 50, 0, 20000);
+                dispatcher.addAudioProcessor(mfcc);
+                dispatcher.addAudioProcessor(new AudioProcessor() {
+
+                    @Override
+                    public void processingFinished() {
+                    }
+
+                    @Override
+                    public boolean process(AudioEvent audioEvent) {
+                        mfccList.add(mfcc.getMFCC());
+                        return true;
+                    }
+                });
+                dispatcher.run();
+
+                for (int j = 0; j < mfccList.size(); j++) {
+                    mfcc_fos.write((Arrays.toString(mfccList.get(j)) + ", ?\n")
+                            .replace("[", "")
+                            .replace("]", "")
+                            .getBytes()
+                    );
+                }
+                Log.d("옵져버", "mfcc complete");
+                mfcc_fos.close();
+            } catch (IOException e) {
+                Log.d("옵져버", "mfcc_failed");}
+
+
+            // classification of sound
+            WekaWrapper wrapper = new WekaWrapper();
+            int count = 0;
+            int numInstances = 0;
+            int partial_result = 0;
+            try {
+                Instances data = new Instances(new BufferedReader(new InputStreamReader(new FileInputStream(this.path + ".arff"))));
+                // set snore Yes or No index
+                data.setClassIndex(data.numAttributes()-1);
+                numInstances = data.numInstances();
+                for (int i=0; i<numInstances; i++) {
+                    double result = wrapper.classifyInstance(data.instance(i));
+
+                    if (data.classAttribute().value((int)result).equals("yes")) {
+                        count++;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (numInstances != 0) {
+                partial_result = count * 100 / numInstances;
+                if (partial_result >= 5) {
+                    snore_set.add(new File(this.path + ".mp3"));
+                    snore_timeset.add(record_start_time);
+                    grace = 0;
+                    Log.d("Classification", "snore detected");
+                }
+                else if (grace == 0 && snore_set.size() != 0) {
+                    snore_set.add(new File(this.path + ".mp3"));
+                    snore_timeset.add(record_start_time);
+                    grace++;
+                    Log.d("Classification", "grace detected");
+                } else if (grace == 0) {
+                    // case for debugging
+                    Log.d("Classification", "non-snoring detected");
+                } else if (grace == 1) {
+                    try {
+                        Log.d("Classification", "merge detected");
+                        File target_file = new File(this.path.replace("recorded", "snore") + " " + String.valueOf(snore_set.size() * 5) + ".mp3");
+
+                        String snore_string = String.valueOf(snore_timeset.peek()) + " " + String.valueOf(snore_set.size() * 5) + "\n";
+                        snore_fos.write(snore_string.getBytes());
+
+                        File[] snore_files = new File[snore_set.size()];
+                        for (int i = 0; i < snore_set.size(); i++) {
+                            snore_files[i] = snore_set.get(i);
+                        }
+                        mergeMP3(snore_files, target_file);
+                        grace = 0;
+                        snore_set.clear();
+                        snore_timeset.clear();
+                        Log.d("Classification", "merge success");
+                    } catch (IOException e) {
+                    }
+                }
+                Log.d("Weka Classification / ", this.path + ".arff : " + String.valueOf(partial_result) + "%");
+            }
+
+            this.stopWatching();
+        }
+    }
+
+    private void mergeMP3(File[] inputs, File output) throws IOException {
+        FileOutputStream outputStream = null;
+        try {
+            outputStream = new FileOutputStream(output);
+            for (File input : inputs) {
+                FileInputStream inputStream = null;
+                try {
+                    IOUtils.copy(inputStream = new FileInputStream(input),
+                            outputStream);
+                } finally {
+                    if (inputStream != null) try {
+                        inputStream.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } finally {
+            if (outputStream != null) try {
+                outputStream.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static class IOUtils {
+        private static final int BUF_SIZE = 0x1000;
+
+        public static long copy(InputStream from, OutputStream to)
+                throws IOException {
+            byte[] buf = new byte[BUF_SIZE];
+            long total = 0;
+            while (true) {
+                int r = from.read(buf);
+                if (r == -1) {
+                    break;
+                }
+                to.write(buf, 0, r);
+                total += r;
+            }
+            return total;
+        }
+    }
+
 }
