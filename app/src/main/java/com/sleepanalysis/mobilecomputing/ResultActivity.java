@@ -77,44 +77,14 @@ public class ResultActivity extends AppCompatActivity {
         String date_string = intent.getExtras().getString("date_string");
         File acc_file = new File(date_string + "acc.txt");
         ArrayList<Long> timeList = (ArrayList<Long>)intent.getSerializableExtra("time_list");
-/*        // hh:mm:ss
-        try{
-            InputStream in = getResources().openRawResource(R.raw.acc6);
 
-            if(in != null) {
-                InputStreamReader stream = new InputStreamReader(in, "utf-8");
-                BufferedReader buffer = new BufferedReader(stream);
-
-                String line;
-                float x, y, max = 100, min = 0;
-                int start_time2 = 33436; //(int)start_time/1000 % (24 * 60 * 60);
-                Log.d("data", "start_time2 :" + start_time2);
-                while ((line = buffer.readLine()) != null) {
-                    String[] split = line.split(" ");
-                    String[] hhmmss = split[0].split(":");
-                    int sec = Integer.valueOf(hhmmss[0]) * 3600 + Integer.valueOf(hhmmss[1]) * 60 + Integer.valueOf(hhmmss[2]);
-                    x = sec - start_time2;
-                    // AM time
-                    if (x < 0) x = x + 12 * 3600;
-
-                    // y = Float.valueOf(split[1]);
-                    y = (max-min)/2*(float)Math.cos((x*Math.PI)/(45*60))+(max+min)/2;
-
-                    values_acc.add(new Entry(x, y));
-                    Log.d("data", "sec : " + sec);
-                    Log.d("data", x + ", " + y + ", " + x/(45*60));
-                }
-
-                in.close();
-            }
-*/
         try {
-            InputStream in = getResources().openRawResource(R.raw.acc_curr4);
-            InputStreamReader stream = new InputStreamReader(in, "utf-8");
-            acc_br = new BufferedReader(stream);
+//            InputStream in = getResources().openRawResource(R.raw.acc_curr4);
+//            InputStreamReader stream = new InputStreamReader(in, "utf-8");
+//            acc_br = new BufferedReader(stream);
 
-//            acc_fr = new FileReader(acc_file);
-//            acc_br = new BufferedReader(acc_fr);
+            acc_fr = new FileReader(acc_file);
+            acc_br = new BufferedReader(acc_fr);
             String line;
             int x;
             float y, max = 100, min = 10;

@@ -211,53 +211,15 @@ public class MeasureActivity extends AppCompatActivity {
                         acc_file = new File(date_string + "acc.txt");
 
                         try {
-/*
-                            // hhmmss test
-                            InputStream in = getResources().openRawResource(R.raw.acc_curr);
-                            if(in != null) {
-                                InputStreamReader stream = new InputStreamReader(in, "utf-8");
-                                BufferedReader buffer = new BufferedReader(stream);
-
-                                String line;
-                                long t;
-                                int start = 100, end = 100, max = 70, min = 20;
-                                timeList = new ArrayList<Long>();
-                                long startT = 0, endT = 0;
-                                line = buffer.readLine();
-                                String[] split = line.split(" ");
-                                String[] hhmmss = split[0].split(":");
-                                long sec = Long.valueOf(hhmmss[0]) * 3600 + Long.valueOf(hhmmss[1]) * 60 + Long.valueOf(hhmmss[2]);
-                                startT = sec;
-                                long startT2 = sec;
-                                timeList.add(startT);
-                                Log.d("timeList", "startTime = " + startT);
-                                while ((line = buffer.readLine()) != null) {
-                                    split = line.split(" ");
-                                    hhmmss = split[0].split(":");
-                                    sec = Long.valueOf(hhmmss[0]) * 3600 + Long.valueOf(hhmmss[1]) * 60 + Long.valueOf(hhmmss[2]);
-                                    if (sec - startT2 < 0) sec = sec + 12 * 3600;
-                                    t = sec;
-                                    endT = t;
-                                    if (t >= startT + 45 * 60) {
-                                        timeList.add(t);
-                                        startT = t;
-
-                                        Log.d("timeList", "time = " + t);
-                                    }
-                                }
-                                timeList.add(endT);
-                                Log.d("timeList", "endTime = " + endT);
-                            }
-*/
                             // currMillSec
 
-                            InputStream in = getResources().openRawResource(R.raw.acc_curr4);
+//                            InputStream in = getResources().openRawResource(R.raw.acc_curr4);
+//
+//                            InputStreamReader stream = new InputStreamReader(in, "utf-8");
+//                            acc_br = new BufferedReader(stream);
 
-                            InputStreamReader stream = new InputStreamReader(in, "utf-8");
-                            acc_br = new BufferedReader(stream);
-
-//                            acc_fr = new FileReader(acc_file);
-//                            acc_br = new BufferedReader(acc_fr);
+                            acc_fr = new FileReader(acc_file);
+                            acc_br = new BufferedReader(acc_fr);
                             String line;
                             long t;
                             int start = 100, end = 100, max = 70, min = 20;
