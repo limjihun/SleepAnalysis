@@ -78,7 +78,10 @@ public class MeasureActivity extends AppCompatActivity {
     int bufferSize = 1024;
     int bufferOverlap = 128;
     LinkedList<File> snore_set;
+    LinkedList<Long> snore_timeset;
     int grace;
+    File snore_txt;
+    FileOutputStream snore_fos;
 
     SensorManager mSensorManager;
 
@@ -173,6 +176,10 @@ public class MeasureActivity extends AppCompatActivity {
                     case START :
                         button_start.setText(getText(R.string.end));
                         start_time = System.currentTimeMillis();
+                        snore_txt = new File(date_string + "snore.txt");
+                        try {
+                            snore_fos = new FileOutputStream(snore_txt);
+                        } catch (IOException e) {}
 
                         // recording every minutes by scheduling
                         new AndroidFFMPEGLocator(MeasureActivity.this);
@@ -190,6 +197,7 @@ public class MeasureActivity extends AppCompatActivity {
                                             time_format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.KOREAN);
                                             time_string = date_string + "recorded/" + time_format.format(time);
                                             snore_set = new LinkedList<>();
+                                            snore_timeset = new LinkedList<>();
                                             grace = 0;
 
                                             try {
@@ -321,6 +329,11 @@ public class MeasureActivity extends AppCompatActivity {
                         }
 
                         isMeasured = true;
+
+                        try {
+                            snore_fos.close();
+                        } catch (IOException e) {
+                        }
 
                         Toast.makeText(getApplicationContext(), "Stopping Measurement",
                                 Toast.LENGTH_LONG).show();
@@ -526,13 +539,15 @@ public class MeasureActivity extends AppCompatActivity {
             }
             if (numInstances != 0) {
                 partial_result = count * 100 / numInstances;
-                if (partial_result >= 15) {
+                if (partial_result >= 5) {
                     snore_set.add(new File(this.path + ".mp3"));
+                    snore_timeset.add(record_start_time);
                     grace = 0;
                     Log.d("Classification", "snore detected");
                 }
                 else if (grace == 0 && snore_set.size() != 0) {
                     snore_set.add(new File(this.path + ".mp3"));
+                    snore_timeset.add(record_start_time);
                     grace++;
                     Log.d("Classification", "grace detected");
                 } else if (grace == 0) {
@@ -542,6 +557,10 @@ public class MeasureActivity extends AppCompatActivity {
                     try {
                         Log.d("Classification", "merge detected");
                         File target_file = new File(this.path.replace("recorded", "snore") + " " + String.valueOf(snore_set.size() * 5) + ".mp3");
+
+                        String snore_string = String.valueOf(snore_timeset.peek()) + " " + String.valueOf(snore_set.size() * 5) + "\n";
+                        snore_fos.write(snore_string.getBytes());
+
                         File[] snore_files = new File[snore_set.size()];
                         for (int i = 0; i < snore_set.size(); i++) {
                             snore_files[i] = snore_set.get(i);
@@ -549,6 +568,7 @@ public class MeasureActivity extends AppCompatActivity {
                         mergeMP3(snore_files, target_file);
                         grace = 0;
                         snore_set.clear();
+                        snore_timeset.clear();
                         Log.d("Classification", "merge success");
                     } catch (IOException e) {
                     }
