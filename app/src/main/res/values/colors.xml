@@ -3,7 +3,7 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
-    <color name="background">#28323F</color>
-    <color name="menuSelected">#38424F</color>
-    <color name="white">#DDDDFF</color>
+    <color name="measureBackground">#28323F</color>
+    <color name="resultBackground">#38424F</color>
+    <color name="white">#ddddff</color>
 </resources>

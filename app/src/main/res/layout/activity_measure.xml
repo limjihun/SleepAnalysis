@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="@color/measureBackground"
     tools:context=".MeasureActivity">
 
     <Button
@@ -12,6 +12,7 @@
         android:layout_width="240dp"
         android:layout_height="240dp"
         android:background="@drawable/button2"
+        android:splitMotionEvents="false"
         android:text="@string/start"
         android:textColor="@color/white"
         android:textSize="40sp"
@@ -33,9 +34,9 @@
             android:id="@+id/measure_tab"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:background="@color/measureBackground"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:background="@color/menuSelected"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/result_tab"
             app:layout_constraintStart_toStartOf="parent"
@@ -45,14 +46,14 @@
                 android:id="@+id/measure_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@color/menuSelected"
+                android:layout_marginTop="12dp"
+                android:background="@color/measureBackground"
                 android:contentDescription="@string/measure"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/result_button"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintVertical_bias="0.0"
-                android:layout_marginTop="12dp"
                 app:srcCompat="@drawable/measure" />
 
             <TextView
@@ -69,6 +70,7 @@
             android:id="@+id/result_tab"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:background="@color/resultBackground"
             android:gravity="center_horizontal"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -80,13 +82,13 @@
                 android:id="@+id/result_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@color/menuSelected"
+                android:layout_marginTop="12dp"
+                android:background="@color/resultBackground"
                 android:contentDescription="@string/result"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/measure_button"
                 app:layout_constraintTop_toTopOf="parent"
-                android:layout_marginTop="12dp"
                 app:srcCompat="@drawable/result" />
 
             <TextView
@@ -98,5 +100,45 @@
                 android:textColor="@color/white" />
         </LinearLayout>
     </android.support.constraint.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/light_test"
+        android:layout_width="142dp"
+        android:layout_height="63dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/white"
+        android:visibility="invisible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/acc_test"
+        android:layout_width="142dp"
+        android:layout_height="63dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:textColor="@color/white"
+        android:visibility="invisible"
+        android:gravity="right"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="275dp"
+        android:layout_height="59dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center_vertical|center"
+        android:text="@string/description"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toTopOf="@+id/measure_menu"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/start_button" />
 
 </android.support.constraint.ConstraintLayout>
