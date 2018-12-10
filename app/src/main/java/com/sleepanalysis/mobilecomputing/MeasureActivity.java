@@ -578,7 +578,7 @@ public class MeasureActivity extends AppCompatActivity {
             }
             if (numInstances != 0) {
                 partial_result = count * 100 / numInstances;
-                if (partial_result >= 5) {
+                if (partial_result >= 10) {
                     snore_set.add(new File(this.path + ".mp3"));
                     snore_timeset.add(record_start_time);
                     grace = 0;
